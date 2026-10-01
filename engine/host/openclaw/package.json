@@ -1,0 +1,26 @@
+{
+  "name": "openclaw-plugin-babayaga",
+  "version": "0.1.0",
+  "description": "BABAYAGA control plane: authorized-only credential-attack engine (lab-only v0), ops-safe read surface over the babayaga/1 adapter.",
+  "type": "module",
+  "private": true,
+  "files": [
+    "index.ts",
+    "tools.ts",
+    "gates.ts",
+    "openclaw.plugin.json",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "openclaw": ">=2026.9.7"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "compat": {
+      "pluginApi": ">=2026.9.7",
+      "minGatewayVersion": "2026.9.7"
+    }
+  }
+}

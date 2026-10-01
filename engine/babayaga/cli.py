@@ -190,17 +190,23 @@ def cmd_roe_check(args: argparse.Namespace) -> int:
 
 def cmd_seal(args: argparse.Namespace) -> int:
     from . import seal as seal_mod
+    from .ledger import LedgerRefusal
 
+    try:
+        db = _resolve_campaign_db(args.target)
+    except LedgerRefusal as exc:
+        _emit({"refusal": str(exc)}, args.json)
+        return EXIT_REFUSAL
     if args.verify:
-        ok, detail = seal_mod.verify_seal(args.target)
+        ok, detail = seal_mod.verify_seal(db)
         _emit({"verify": ok, "detail": detail}, args.json)
         return EXIT_OK if ok else EXIT_REFUSAL
     try:
-        manifest = seal_mod.seal_campaign(args.target)
+        manifest = seal_mod.seal_campaign(db)
     except seal_mod.SealRefusal as exc:
         _emit({"refusal": str(exc)}, args.json)
         return EXIT_REFUSAL
-    _emit({**manifest, "manifest_path": str(seal_mod.manifest_path(args.target))}, args.json)
+    _emit({**manifest, "manifest_path": str(seal_mod.manifest_path(db))}, args.json)
     return EXIT_OK
 
 

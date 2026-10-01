@@ -30,8 +30,8 @@ count:
 	@find host/opencode -name '*.ts' ! -name '*.test.ts' | xargs wc -l | tail -1
 
 install:
-	uv venv .venv
-	.venv/bin/pip install -e .
+	@test -x .venv/bin/python || uv venv .venv
+	uv pip install --python .venv/bin/python -e .
 
 clean:
 	rm -rf .venv build dist *.egg-info
