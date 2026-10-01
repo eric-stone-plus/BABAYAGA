@@ -1,0 +1,17 @@
+{
+  "id": "R-CRED-SPRAY-002",
+  "name": "lab http-get spray, low-and-slow tier (5-minute cadence)",
+  "pack": "spray",
+  "match": {
+    "service": "http-get"
+  },
+  "throttle": {
+    "instrument_flags": ["-t", "1"],
+    "slice_cadence_seconds": 300
+  },
+  "budget": {
+    "per_principal_per_run_max": 2
+  },
+  "lockout_abort_after": 1,
+  "refusal_rationale": "low-and-slow tier exists for engagements whose risk appetite is minimal; any request to run it faster or with a wider budget is refused because the tier's whole value is its restraint."
+}

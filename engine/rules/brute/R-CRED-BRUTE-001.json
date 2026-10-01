@@ -1,0 +1,17 @@
+{
+  "id": "R-CRED-BRUTE-001",
+  "name": "lab http-get narrow brute, single principal focus at 2-minute cadence",
+  "pack": "brute",
+  "match": {
+    "service": "http-get"
+  },
+  "throttle": {
+    "instrument_flags": ["-t", "1"],
+    "slice_cadence_seconds": 120
+  },
+  "budget": {
+    "per_principal_per_run_max": 3
+  },
+  "lockout_abort_after": 1,
+  "refusal_rationale": "targeted multi-password pressure is the highest lockout-risk shape in the corpus, so it runs slower than any spray tier and dies on the first locked outcome; relaxing either limit is refused because lockout of a real principal is the exact harm the ROE cap exists to prevent."
+}

@@ -1,0 +1,16 @@
+{
+  "engagement_id": "LAB-DEMO-0001",
+  "operator": "lab-operator",
+  "attestation": {
+    "statement": "Lab-only demonstration engagement against fixtures this operator owns on loopback. No third-party system is touched.",
+    "authorized_by": "lab operator (self, lab owner)",
+    "date": "2026-09-28T00:00:00+08:00"
+  },
+  "targets": [
+    { "host": "127.0.0.1", "ports": [8080], "proto": "http-get" }
+  ],
+  "principals": ["labuser1", "labuser2"],
+  "budgets": { "per_principal_per_run": 3 },
+  "window": null,
+  "lockout": { "observed_threshold": 5, "reset_minutes": 15 }
+}

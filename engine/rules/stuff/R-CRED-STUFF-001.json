@@ -1,0 +1,17 @@
+{
+  "id": "R-CRED-STUFF-001",
+  "name": "lab http-get known-pair replay, single shot per pair",
+  "pack": "stuff",
+  "match": {
+    "service": "http-get"
+  },
+  "throttle": {
+    "instrument_flags": ["-t", "1"],
+    "slice_cadence_seconds": 60
+  },
+  "budget": {
+    "per_principal_per_run_max": 1
+  },
+  "lockout_abort_after": 1,
+  "refusal_rationale": "credential stuffing replays pairs already known to the engagement; each pair is tried exactly once, so any request for a second attempt per principal means the pair is not actually known and the shape has silently become guessing, which this rule refuses."
+}

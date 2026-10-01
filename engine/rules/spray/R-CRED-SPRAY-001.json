@@ -1,0 +1,17 @@
+{
+  "id": "R-CRED-SPRAY-001",
+  "name": "lab http-get spray, serial slices at 30s cadence",
+  "pack": "spray",
+  "match": {
+    "service": "http-get"
+  },
+  "throttle": {
+    "instrument_flags": ["-t", "1"],
+    "slice_cadence_seconds": 30
+  },
+  "budget": {
+    "per_principal_per_run_max": 3
+  },
+  "lockout_abort_after": 1,
+  "refusal_rationale": "spray slice would exceed the declared cadence or the per-principal budget; a spray that cannot run serial, slow, and bounded is refused, never sped up. Budget 3 stays below the lab fixture's lockout threshold of 5."
+}

@@ -1,0 +1,21 @@
+{
+  "schema": "babayaga.instrument-manifest/1",
+  "instrument": "hydra",
+  "binary": "hydra",
+  "upstream": {
+    "repo": "vanhauser-thc/thc-hydra",
+    "license": "AGPL-3.0",
+    "relationship": "runtime-argv",
+    "vendored": false
+  },
+  "version": {
+    "probe_argv": ["-h"],
+    "pattern": "Hydra v([0-9]+\\.[0-9]+(?:dev)?)",
+    "min": "9.8dev",
+    "max_exclusive": "9.9",
+    "anchored": "9.8dev",
+    "anchored_date": "2026-09-28"
+  },
+  "requires_standard_ports": false,
+  "notes": "Primary C instrument (RESEARCH.md §1.1). Runtime argv relationship only: invoked as an independent program, never vendored or linked (NOTICE). The range pins the anchored 9.8 development tree measured 2026-09-28 (budget.py); upstream's latest tagged release at survey time was v9.7, so 9.8dev is the deliberate anchor and the eventual 9.8 release stays in range. Output contract: stderr summary stream is the primary parse source; -b jsonv1 is opportunistic because the anchored build has a measured -o EINVAL defect (cli.py probe_hydra_output). Flag policy (budget.py): -C explicit pairs only, -K -I -f required, -e forbidden (attempt multiplier). requires_standard_ports is false: -s/--service port overrides let the lab fixture serve http-get on loopback:8080."
+}

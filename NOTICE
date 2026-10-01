@@ -1,0 +1,24 @@
+BABAYAGA
+Copyright (c) 2026 the BABAYAGA contributors.
+
+Required Notice: Copyright (c) 2026 the BABAYAGA contributors.
+https://github.com/eric-stone-plus/BABAYAGA
+
+Licensed under the GNU Affero General Public License v3.0
+(AGPL-3.0-only). You may obtain a copy of the License in the LICENSE file
+or at https://www.gnu.org/licenses/agpl-3.0.txt
+
+This NOTICE covers original BABAYAGA files in this repository. It does not
+relicense cited instruments. Cited instruments retain their own licenses
+and copyright holders; citing a repository is not combining it into one
+work. Citations point at upstream.
+
+Provenance:
+
+- All code in this repository is original BABAYAGA work by its contributors.
+- THC-Hydra is invoked at runtime as an independent program via its CLI
+  (AGPL-3.0); it is not vendored, linked, or copied into this repository.
+  BABAYAGA consumes its stdout/stderr streams; interface boundaries are
+  documented in RESEARCH.md (licensing) and engine/babayaga/budget.py
+  (measured flag semantics).
+- Category survey sources: CATEGORY.md (fetch dates inline).

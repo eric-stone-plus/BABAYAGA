@@ -1,0 +1,32 @@
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+*.egg-info/
+build/
+dist/
+node_modules/
+
+# Secrets and host-local config: env files, key material, the host-local
+# config layer (babayaga.toml), the operator instrument anchor.
+.env
+*.key
+/babayaga.toml
+/tools/
+
+# Runtime state: produced by installing and running, never authored.
+/tasks/
+/obs/
+/evidence/
+/archive/
+*.db
+*.db-wal
+*.db-shm
+
+# Local receipt for the one-way source export.
+engine/PUBLISHED_FROM

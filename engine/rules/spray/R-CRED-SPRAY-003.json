@@ -1,0 +1,17 @@
+{
+  "id": "R-CRED-SPRAY-003",
+  "name": "lab http-get spray, reset-window rider (one slice per lockout reset)",
+  "pack": "spray",
+  "match": {
+    "service": "http-get"
+  },
+  "throttle": {
+    "instrument_flags": ["-t", "1"],
+    "slice_cadence_seconds": 900
+  },
+  "budget": {
+    "per_principal_per_run_max": 4
+  },
+  "lockout_abort_after": 1,
+  "refusal_rationale": "cadence 900s matches the lab fixture's 15-minute lockout reset, so no window ever carries more than one slice; budget 4 stays below the threshold of 5. Compressing attempts into a single window is refused because that is exactly the lockout signature the cadence exists to avoid."
+}
