@@ -1,7 +1,7 @@
 # rules/ — credential-attack rule corpus (v1)
 
 One JSON object per file, laid out in pack directories. Validate with
-`python -m babayaga.rulecheck engine/rules` (exit 2 on any refusal,
+`python -m core.rulecheck engine/rules` (exit 2 on any refusal,
 exit 0 when clean). `rules.retired/` starts when the first rule is
 retired; retirement is a move, never a delete (the internal design notes).
 
@@ -9,7 +9,7 @@ retired; retirement is a move, never a delete (the internal design notes).
 
 The throttle IS the safety case in a credential-attack engine: **a rule
 without explicit throttle flags is a refusal, not a default**.
-`babayaga.rulecheck` enforces this at corpus load; there is no quiet
+`core.rulecheck` enforces this at corpus load; there is no quiet
 cadence.
 
 ## Language

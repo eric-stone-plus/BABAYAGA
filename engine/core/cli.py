@@ -17,7 +17,7 @@ from . import roe as roe_mod
 
 
 def _repo_root() -> Path:
-    # engine/babayaga/cli.py -> engine/babayaga -> engine -> repo root
+    # engine/core/cli.py -> engine/core -> engine -> repo root
     return Path(__file__).resolve().parents[2]
 
 
@@ -445,7 +445,7 @@ def build_parser() -> argparse.ArgumentParser:
                         "engine/lab/http_get_lab.py, spawned as a subprocess)")
     p.add_argument("--roe", metavar="FILE",
                    help="ROE file (one target, one port). Default (--lab only): "
-                        "engine/babayaga/defaults/roe.example.json adapted to "
+                        "engine/core/defaults/roe.example.json adapted to "
                         "the fixture's ephemeral port")
     p.add_argument("--candidates", metavar="FILE",
                    help="engagement candidate list, one candidate per line "

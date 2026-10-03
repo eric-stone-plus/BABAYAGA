@@ -14,15 +14,15 @@ Nothing here was re-surveyed.
 ## Driven instruments
 
 One instrument is wired at v0. Its adapter manifest lives at
-`engine/host/manifests/hydra.json` (loader/validator:
-`engine/babayaga/manifests.py`) and pins the version range doctor checks.
+`engine/scripts/hydra.json` (loader/validator:
+`engine/core/manifests.py`) and pins the version range doctor checks.
 
 | Instrument | Role | Repo | License | Boundary |
 |---|---|---|---|---|
 | THC-Hydra | network credential testing — the primary C instrument (RESEARCH.md §1.1) | [vanhauser-thc/thc-hydra](https://github.com/vanhauser-thc/thc-hydra) | AGPL-3.0, stock text (diffed against SPDX canonical; zero THC additions) | runtime argv only |
 
 Contract facts, all measured on the anchored **v9.8dev** build
-(2026-09-28; `engine/babayaga/budget.py`, `engine/babayaga/cli.py`):
+(2026-09-28; `engine/core/budget.py`, `engine/core/cli.py`):
 
 - Budget binding: explicit `user:pass` pairs via `-C` only; `-e nsr` is
   forbidden (measured 3x attempt multiplier); `-K -I -f` required
@@ -112,9 +112,9 @@ release figures for the adopted-but-undriven rows live in RESEARCH.md §1.
 
 | Component | Version | Source of truth | Status |
 |---|---|---|---|
-| THC-Hydra (anchored build) | 9.8dev, accepted range `[9.8dev, 9.9)` | `engine/host/manifests/hydra.json`; probe `hydra -h` banner | driven (lab only) |
-| BABAYAGA engine | 0.0.1 | `engine/pyproject.toml`, `babayaga/__init__.py` | engine package |
-| Review-critical safety modules (scope/cmd/egress/secret_transport/confidence/opsec) | engine 0.0.1 | `engine/babayaga/PROVENANCE.md` registry | native; change requires an operator sign-off note |
+| THC-Hydra (anchored build) | 9.8dev, accepted range `[9.8dev, 9.9)` | `engine/scripts/hydra.json`; probe `hydra -h` banner | driven (loopback fixtures only) |
+| BABAYAGA engine | 0.0.1 | `engine/pyproject.toml`, `engine/core/__init__.py` | engine package |
+| Review-critical safety modules (scope/cmd/egress/secret_transport/confidence/opsec) | engine 0.0.1 | `engine/core/PROVENANCE.md` registry | native; change requires an operator sign-off note |
 
 ## License boundary
 

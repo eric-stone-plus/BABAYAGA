@@ -1,6 +1,6 @@
 """BABAYAGA — the authorized-only phase-2 operator (RE, lateral, spend).
 
-This package is the engine core. The opencode plugin (engine/host/opencode/)
+This package is the engine core. The opencode plugin (engine/scripts/)
 is a thin control plane that shells out to the `babayaga` CLI; it must never
 re-implement gate semantics.
 """

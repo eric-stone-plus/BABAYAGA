@@ -24,8 +24,11 @@ class ManifestError(Exception):
 
 
 def manifests_dir() -> Path:
-    # engine/babayaga/manifests.py -> engine/babayaga -> engine -> host/manifests
-    return Path(__file__).resolve().parents[1] / "host" / "manifests"
+    # engine/core/manifests.py -> engine/core -> engine -> scripts/ — the
+    # manifests live FLAT in engine/scripts/ (moved from engine/host/manifests/
+    # when the host/ adapter layer went away). Every *.json in that directory
+    # is a manifest and is validated fail-closed by load()/parse() below.
+    return Path(__file__).resolve().parents[1] / "scripts"
 
 
 def available(base: str | Path | None = None) -> list[str]:

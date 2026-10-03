@@ -99,7 +99,7 @@ export function buildTools(bin = BABAYAGA_BIN) {
   return {
     babayaga_doctor: {
       description:
-        "Run `babayaga doctor` — engine health, lab-only guard state, tools " +
+        "Run `babayaga doctor` — engine health, LAB_ONLY flag state, tools " +
         "anchoring (fails while the instrument resolves on the session PATH).",
       args: {} as Record<string, never>, // plain-object args: no optional keys
       async execute() {

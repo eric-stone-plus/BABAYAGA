@@ -8,7 +8,7 @@ the surviving wording below is the post-attack form. Errata log at the end.
 Deeper technical research (license traps, instrument choices, throttle
 doctrine) lives in `RESEARCH.md` (§2.4 carries the core-module decision
 table; the review-critical registry it refers to is
-`engine/babayaga/PROVENANCE.md`).
+`engine/core/PROVENANCE.md`).
 
 ## Segment 1 — standalone instruments, commercial, SaaS
 

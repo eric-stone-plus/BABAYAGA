@@ -304,7 +304,7 @@ external engine package as a dependency" idea was **killed**: no
 surveyed engine package offers a library-API stability promise, and a
 dependency would import another project's doctrine drift into the
 safety case. Every core module is native authorship (NOTICE); the
-safety-critical ones are registered in `engine/babayaga/PROVENANCE.md`
+safety-critical ones are registered in `engine/core/PROVENANCE.md`
 and change only with an operator sign-off note.
 
 | Module | Decision | Rationale |

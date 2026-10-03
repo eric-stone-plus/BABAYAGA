@@ -19,6 +19,6 @@ Provenance:
 - THC-Hydra is invoked at runtime as an independent program via its CLI
   (AGPL-3.0); it is not vendored, linked, or copied into this repository.
   BABAYAGA consumes its stdout/stderr streams; interface boundaries are
-  documented in RESEARCH.md (licensing) and engine/babayaga/budget.py
+  documented in RESEARCH.md (licensing) and engine/core/budget.py
   (measured flag semantics).
 - Category survey sources: CATEGORY.md (fetch dates inline).

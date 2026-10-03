@@ -13,10 +13,10 @@ requires-python = ">=3.11"
 dependencies = []
 
 [project.scripts]
-babayaga = "babayaga.cli:main"
+babayaga = "core.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["babayaga"]
+packages = ["core"]
 
 [tool.pytest.ini_options]  # not used at v0 (stdlib unittest); kept for orientation
 testpaths = ["tests"]

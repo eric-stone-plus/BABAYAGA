@@ -19,7 +19,7 @@ class ConfigError(Exception):
 
 
 def repo_root() -> Path:
-    # engine/babayaga/config.py -> engine/babayaga -> engine -> repo root
+    # engine/core/config.py -> engine/core -> engine -> repo root
     return Path(__file__).resolve().parents[2]
 
 

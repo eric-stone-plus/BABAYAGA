@@ -1,4 +1,4 @@
-# Review-critical safety modules — engine/babayaga/
+# Review-critical safety modules — engine/core/
 
 This registry names the modules that ARE the engine's safety case. They
 were authored natively at the v0 seed and are ordinary source in every way
@@ -31,4 +31,5 @@ a registered row, the message says so on its own line. Reviewers reject
 registered-module diffs without the note, whatever the tests say.
 
 Modules not listed here change under the ordinary gates (make test plus
-the adapter suites). Registering a new module is itself a sign-off change.
+the plugin QA suite, make plugin-check). Registering a new module is
+itself a sign-off change.

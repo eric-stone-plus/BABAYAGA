@@ -10,7 +10,7 @@ Run:  python3 engine/lab/http_get_lab.py [port]   (default 8080, 127.0.0.1 only)
 Port 0 binds an ephemeral loopback port. Once bound (listen socket ready)
 the server prints one readiness line to stdout: "127.0.0.1 <port>" — the
 `babayaga run --lab` runner spawns the fixture as a subprocess and reads
-that line to learn the port (babayaga/run.py).
+that line to learn the port (core/run.py).
 """
 
 from __future__ import annotations

@@ -32,7 +32,7 @@ class RunRefusal(Exception):
 
 
 def _engine_root() -> Path:
-    # engine/babayaga/run.py -> engine/babayaga -> engine
+    # engine/core/run.py -> engine/core -> engine
     return Path(__file__).resolve().parents[1]
 
 

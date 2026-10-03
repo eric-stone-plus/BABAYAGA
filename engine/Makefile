@@ -1,4 +1,4 @@
-.PHONY: test plugin-check plugin-check-openclaw count install clean
+.PHONY: test plugin-check count install clean
 
 # Definition of done touches these gates (the internal design notes).
 # The QA suites ship only with the full source tree; in the public export
@@ -12,22 +12,15 @@ test:
 	python3 -m unittest discover -s tests -v
 
 plugin-check:
-	@if ! ls host/opencode/*.test.ts >/dev/null 2>&1; then \
-		echo "SKIP: adapter tests are not part of this export (see engine/PUBLISHED_FROM)"; \
+	@if ! ls scripts/*.test.ts >/dev/null 2>&1; then \
+		echo "SKIP: plugin tests are not part of this export (see engine/PUBLISHED_FROM)"; \
 		exit 0; \
 	fi
-	cd host/opencode && bun test
-
-plugin-check-openclaw:
-	@if ! ls host/openclaw/*.test.ts >/dev/null 2>&1; then \
-		echo "SKIP: adapter tests are not part of this export (see engine/PUBLISHED_FROM)"; \
-		exit 0; \
-	fi
-	cd host/openclaw && bun test
+	cd scripts && bun test
 
 count:
-	@find babayaga $(wildcard tests) -name '*.py' | xargs wc -l | tail -1
-	@find host/opencode -name '*.ts' ! -name '*.test.ts' | xargs wc -l | tail -1
+	@find core $(wildcard tests) -name '*.py' | xargs wc -l | tail -1
+	@find scripts -name '*.ts' ! -name '*.test.ts' | xargs wc -l | tail -1
 
 install:
 	@test -x .venv/bin/python || uv venv .venv

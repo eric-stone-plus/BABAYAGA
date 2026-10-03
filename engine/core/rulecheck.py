@@ -1,4 +1,4 @@
-'Static validator for the rules/ corpus — the B10 inversion as code.\n\n- packs and services are CLOSED vocabularies (PACKS / SERVICES below): an\n  unknown value is an ambiguous instrument request and refuses, it is never\n  resolved by best guess;\n- the field set is closed at every nesting level, because a typo\'d key\n  ("budjet") would otherwise be silently ignored — the fail-open shape this\n  corpus exists to kill;\n- instrument flags are judged against budget.py\'s measured policy: the -e\n  family (attempt multiplier) is forbidden anywhere, and the runner-owned\n  flags (-C/-K/-I/-f, budget.REQUIRED_FLAGS) must not be re-declared by a\n  rule.\n\nExit codes (babayaga/__init__.py): 0 clean corpus,\n2 any refusal issue, 1 bad invocation (e.g. missing directory).\n\nRun:  python -m babayaga.rulecheck engine/rules [--json]\n\nThis module is deliberately standalone: no CLI subcommand, no schema event\nkinds. The runner consumes check_corpus() when the run milestone lands.\n'
+'Static validator for the rules/ corpus — the B10 inversion as code.\n\n- packs and services are CLOSED vocabularies (PACKS / SERVICES below): an\n  unknown value is an ambiguous instrument request and refuses, it is never\n  resolved by best guess;\n- the field set is closed at every nesting level, because a typo\'d key\n  ("budjet") would otherwise be silently ignored — the fail-open shape this\n  corpus exists to kill;\n- instrument flags are judged against budget.py\'s measured policy: the -e\n  family (attempt multiplier) is forbidden anywhere, and the runner-owned\n  flags (-C/-K/-I/-f, budget.REQUIRED_FLAGS) must not be re-declared by a\n  rule.\n\nExit codes (core/__init__.py): 0 clean corpus,\n2 any refusal issue, 1 bad invocation (e.g. missing directory).\n\nRun:  python -m core.rulecheck engine/rules [--json]\n\nThis module is deliberately standalone: no CLI subcommand, no schema event\nkinds. The runner consumes check_corpus() when the run milestone lands.\n'
 
 from __future__ import annotations
 
@@ -280,7 +280,7 @@ def check_corpus(rules_dir: str | Path) -> CorpusReport:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        prog="babayaga.rulecheck",
+        prog="core.rulecheck",
         description="Validate the babayaga rule corpus (B10: throttle flags "
                     "are REQUIRED; their absence is a refusal).")
     parser.add_argument("rules_dir", help="corpus directory (e.g. engine/rules)")
