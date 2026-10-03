@@ -25,7 +25,11 @@ PACKS = ("spray", "stuff", "brute")
 # Hydra module names the corpus may match on. v1 is exactly the lab demo
 # path (engine/lab/http_get_lab.py); this host's hydra has no ssh support,
 # so nothing else is declarable yet.
-SERVICES = ("http-get",)
+# v1 modules: http-get (web basic auth) + the two mail read protocols whose
+# direct channels are the phase-2 spend surface (IMAP/POP3; a Coremail-class
+# IMAP hit bypasses web 2FA). smtp AUTH stays out until a rule + a first-hand
+# engagement need justify it — the vocabulary grows by declaration only.
+SERVICES = ("http-get", "pop3", "imap", "smtp")
 
 # id shape: R-CRED-<PACK uppercased>-<three digits>; the pack segment must
 # agree with the "pack" field (checked as id_pack_mismatch).

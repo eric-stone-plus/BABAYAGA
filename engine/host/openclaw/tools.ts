@@ -25,6 +25,8 @@
  * type-only import, stripped at load.
  */
 
+import { spawn } from "node:child_process";
+
 import type { TSchema } from "typebox";
 
 const DEFAULT_TIMEOUT_MS = 15_000; // same bound as the opencode seat
@@ -46,28 +48,37 @@ export async function runBounded(
   timeoutMs: number = DEFAULT_TIMEOUT_MS,
   env: Record<string, string> = {},
 ): Promise<BoundedResult> {
-  const proc = Bun.spawn([bin, ...args], {
-    stdout: "pipe",
-    stderr: "pipe",
-    env: { ...process.env, ...env },
+  // node:child_process runs under both the bun test runner and the Node-hosted
+  // live Gateway; Bun.spawn would fail at runtime outside bun.
+  return new Promise((resolve, reject) => {
+    const proc = spawn(bin, args, { env: { ...process.env, ...env } });
+    let stdout = "";
+    let stderr = "";
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      proc.kill("SIGKILL");
+    }, timeoutMs);
+    proc.stdout.on("data", (chunk: Buffer | string) => {
+      stdout += chunk;
+    });
+    proc.stderr.on("data", (chunk: Buffer | string) => {
+      stderr += chunk;
+    });
+    proc.on("error", (err) => {
+      clearTimeout(timer);
+      reject(err);
+    });
+    proc.on("close", (code) => {
+      clearTimeout(timer);
+      resolve({
+        stdout: stdout.length > MAX_OUTPUT_BYTES ? stdout.slice(0, MAX_OUTPUT_BYTES) : stdout,
+        stderr: stderr.length > MAX_OUTPUT_BYTES ? stderr.slice(0, MAX_OUTPUT_BYTES) : stderr,
+        code: code ?? -1,
+        timedOut,
+      });
+    });
   });
-  let timedOut = false;
-  const timer = setTimeout(() => {
-    timedOut = true;
-    proc.kill(9);
-  }, timeoutMs);
-  const [stdout, stderr] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-  ]);
-  const code = await proc.exited;
-  clearTimeout(timer);
-  return {
-    stdout: stdout.length > MAX_OUTPUT_BYTES ? stdout.slice(0, MAX_OUTPUT_BYTES) : stdout,
-    stderr: stderr.length > MAX_OUTPUT_BYTES ? stderr.slice(0, MAX_OUTPUT_BYTES) : stderr,
-    code,
-    timedOut,
-  };
 }
 
 export interface AdapterOutcome {

@@ -1,0 +1,23 @@
+{
+  "schema": "babayaga.instrument-manifest/1",
+  "instrument": "kerbrute",
+  "binary": "kerbrute",
+  "upstream": {
+    "repo": "ropnop/kerbrute",
+    "license": "Apache-2.0",
+    "relationship": "runtime-argv",
+    "vendored": false
+  },
+  "version": {
+    "probe_argv": [
+      "version"
+    ],
+    "pattern": "Version: (\\S+)",
+    "min": "1.0.4dev",
+    "max_exclusive": "1.2",
+    "anchored": "1.0.4dev",
+    "anchored_date": "2026-10-03"
+  },
+  "requires_standard_ports": false,
+  "notes": "Kerberos pre-auth spray/enum instrument (RESEARCH.md \u00a71.3). Anchored build stamped 1.0.4dev (post-v1.0.3 development tree, mirror pin fc0d5d8, tools/mirrors/kerbrute.git, CI-stripped). --safe aborts all threads on a locked account; pre-auth failures still count toward lockout."
+}

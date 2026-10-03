@@ -1,0 +1,23 @@
+{
+  "schema": "babayaga.instrument-manifest/1",
+  "instrument": "hashcat",
+  "binary": "hashcat",
+  "upstream": {
+    "repo": "hashcat/hashcat",
+    "license": "MIT (docs/license.txt; no root LICENSE file)",
+    "relationship": "runtime-argv",
+    "vendored": false
+  },
+  "version": {
+    "probe_argv": [
+      "--version"
+    ],
+    "pattern": "v(\\d+\\.\\d+\\.\\d+)(?:-\\d+-g[0-9a-f]+)?",
+    "min": "7.1.2",
+    "max_exclusive": "8.0",
+    "anchored": "7.1.2",
+    "anchored_date": "2026-10-03"
+  },
+  "requires_standard_ports": false,
+  "notes": "Offline cracking orchestrator (RESEARCH.md \u00a71.2). Anchored build is a git-describe tree: v7.1.2-817-g1397c40ac (mirror pin 1397c40ac, tools/mirrors/hashcat.git, CI-stripped). --status-json/--session/--brain-server are the orchestration surface; PRINCE rides princeprocessor via stdin, never in core."
+}

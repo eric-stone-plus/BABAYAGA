@@ -1,0 +1,23 @@
+{
+  "schema": "babayaga.instrument-manifest/1",
+  "instrument": "o365spray",
+  "binary": "o365spray",
+  "upstream": {
+    "repo": "0xZDH/o365spray",
+    "license": "MIT",
+    "relationship": "runtime-argv",
+    "vendored": false
+  },
+  "version": {
+    "probe_argv": [
+      "--version"
+    ],
+    "pattern": "o365spray -- (\\d+\\.\\d+\\.\\d+)",
+    "min": "3.0.4",
+    "max_exclusive": "4.0",
+    "anchored": "3.0.4",
+    "anchored_date": "2026-10-03"
+  },
+  "requires_standard_ports": false,
+  "notes": "Cloud identity spray instrument (RESEARCH.md \u00a71.3): --count/--lockout/--sleep/--jitter lockout-timer semantics. --lockout is a configured reset delay, never probed from target."
+}

@@ -1,0 +1,23 @@
+{
+  "schema": "babayaga.instrument-manifest/1",
+  "instrument": "nxc",
+  "binary": "nxc",
+  "upstream": {
+    "repo": "Pennyw0rth/NetExec",
+    "license": "BSD-2-Clause",
+    "relationship": "runtime-argv",
+    "vendored": false
+  },
+  "version": {
+    "probe_argv": [
+      "--version"
+    ],
+    "pattern": "(\\d+\\.\\d+\\.\\d+) - \\S+ - [0-9a-f]{7,}",
+    "min": "1.5.1",
+    "max_exclusive": "2.0",
+    "anchored": "1.5.1",
+    "anchored_date": "2026-10-03"
+  },
+  "requires_standard_ports": false,
+  "notes": "Lateral-movement / post-validation instrument (RESEARCH.md \u00a71.3): smb/ssh/ldap/ftp/wmi/winrm/rdp/vnc/mssql; --jitter/--continue-on-success; per-protocol workspace DBs at ~/.nxc/workspaces are the durable credential-store pattern. Explicit port via -p."
+}

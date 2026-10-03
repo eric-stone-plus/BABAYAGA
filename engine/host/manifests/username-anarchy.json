@@ -1,0 +1,23 @@
+{
+  "schema": "babayaga.instrument-manifest/1",
+  "instrument": "username-anarchy",
+  "binary": "username-anarchy",
+  "upstream": {
+    "repo": "urbanadventurer/username-anarchy",
+    "license": "MIT",
+    "relationship": "runtime-argv",
+    "vendored": false
+  },
+  "version": {
+    "probe_argv": [
+      "-h"
+    ],
+    "pattern": "Version: ([0-9.]+)",
+    "min": "0.6",
+    "max_exclusive": "1.0",
+    "anchored": "0.6",
+    "anchored_date": "2026-10-03"
+  },
+  "requires_standard_ports": false,
+  "notes": "Candidate-generation instrument (RESEARCH.md \u00a71.4): username format engine + plugin formats. Tree under the operator's tool residency."
+}

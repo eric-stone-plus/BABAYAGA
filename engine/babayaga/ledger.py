@@ -97,9 +97,13 @@ class Ledger:
         return row[0]
 
     def amend_campaign(self, old_digest: str, new_draft: dict) -> str:
-        '        Amendments chain linearly: old_digest must equal the currently\n        governing digest (compare-and-swap), the campaign.amended event\n        records old -> new plus the fresh attestation block as evidence, and\n        attempts already recorded keep the digest that governed them.\n        Returns the new governing digest.\n        '
+        "        Amendments chain linearly: old_digest must equal the currently\n        governing digest (compare-and-swap), the campaign.amended event\n        records old -> new plus the fresh attestation block as evidence, and\n        attempts already recorded keep the digest that governed them.\n        Returns the new governing digest.\n\n        An amendment re-terms the SAME engagement: the draft's\n        engagement_id must equal the campaign's (bound immutably by\n        campaign.init). A draft authored for another engagement is refused —\n        cross-campaign digest binding would attest this campaign under an\n        authorization issued to a different scope.\n        "
         from . import roe as roe_mod
 
+        if not isinstance(old_digest, str) or not old_digest:
+            raise LedgerRefusal(
+                "old_digest must be a non-empty string (the compare-and-swap "
+                "base the amendment chains from)")
         errors = roe_mod.validate(new_draft)
         if errors:
             raise LedgerRefusal(
@@ -123,10 +127,18 @@ class Ledger:
                     "digest-identical draft carries no fresh re-attestation "
                     "— the flip is conditional on the operator's fresh "
                     "attestation, and an unchanged ROE proves none")
+            engagement = self._engagement_id()
+            if new_draft["engagement_id"] != engagement:
+                raise LedgerRefusal(
+                    f"amendment draft is scoped to engagement "
+                    f"{new_draft['engagement_id']!r} but this campaign is "
+                    f"{engagement!r} — an amendment re-terms the SAME "
+                    "engagement; a different engagement is a different "
+                    "campaign (init it under its own ROE)")
             self._append_event(
                 "campaign.amended",
-                self._engagement_id(),
-                {"engagement_id": self._engagement_id(),
+                engagement,
+                {"engagement_id": engagement,
                  "old_roe_digest": current,
                  "new_roe_digest": new_digest,
                  "attestation": new_draft["attestation"]},

@@ -1,14 +1,24 @@
 # RESEARCH.md — The Spending Engine: External Survey and Adoption Roadmap
 
-- Research date: 2026-09-28. External data (repository metrics, licenses,
-  versions, standards text) is as of 2026-09-28; every drifting figure
-  carries its own fetch date.
+- Research dates: 2026-09-28 (main survey), 2026-10-03 (NSA-org /
+  Ghidra adjacency round, §1.5), and 2026-10-03 again (phase-2
+  mission re-evaluation, §1.6). External data (repository metrics,
+  licenses, versions, standards text) is as of the fetch date stamped
+  on the claim; every drifting figure carries its own fetch date.
 - Source: a goal-mode adversarial research swarm — four parallel survey
   axes (engine internals / credential-attack tooling / attack-framework
   governance / runtime and protocol libraries), then a second round in
   which two attacker subagents tried to kill every load-bearing claim.
   The research was read-only: it changed no upstream files and cloned
   nothing outside temporary scratch.
+- Round 2 (2026-10-03): adjacency survey of Ghidra
+  (NationalSecurityAgency/ghidra) and the full NationalSecurityAgency
+  GitHub organization (89 repositories at fetch date), to decide
+  whether any of it belongs in the spending engine. Primary-source
+  pass (GitHub REST API, releases page, verbatim
+  LICENSE/README/GettingStarted reads) followed by one adversarial
+  killer pass; killed claims and corrections are recorded in §5, the
+  acceptance note in §6.
 - Material scope: **lawful public sources only**. Upstream tools are
   surveyed where they publish; nothing leaked or unlicensed is fetched,
   read, or adopted. An engine whose premise is authorized-only operation
@@ -40,6 +50,15 @@ matters most, because a guess is an irreversible act against a target.
 BABAYAGA is the engine for that side: it spends, under its own
 authorization gate, and exports what it proves in an
 `access`/`grants_access` vocabulary a reconnaissance engine can ingest.
+
+The 2026-10-03 adjacency round (§1.5) looked where offensive
+capability concentrates naturally — the NSA's public portfolio,
+Ghidra above all — and found the same shape: a reverse-engineering
+framework and defender tooling, archived test-PKI and key-custody
+utilities, and not one tool that spends a credential. The negative
+finding survives a second, unrelated corpus. (Under the phase-2
+operator identity of §1.6 the framework itself is in scope as the RE
+instrument — the negative finding is about *spend*, and stays true.)
 
 ## 1. Fusion verdicts for the instrument layer
 
@@ -84,6 +103,91 @@ files in-repo, not from README badges.
 | ns-rules (dive lineage) | NSAKEY/nsa-rules | **Fair License** (round 1 said "no license" — killed in round 2; it is permissive) | Usable rules; the *original* dive.rule's author remains unattributed anywhere reachable — do not cite |
 | Hob0Rules | praetorian-inc/Hob0Rules | **no LICENSE file** → all-rights-reserved; also ships rockyou.txt.gz | Not redistributable; reference only |
 | Hashtopolis | hashtopolis/server | **GPL-3.0** (round 1 guessed AGPL — corrected) | **Pattern only**: server/agent/chunk delegation for distributed hashcat is the farm design; no code |
+
+### 1.5 Reverse-engineering adjacency — Ghidra and the NSA org (2026-10-03)
+
+Question put to the survey: does anything in
+NationalSecurityAgency/ghidra, or in the wider NationalSecurityAgency
+org (89 repositories at fetch date), belong in a credential-spending
+engine? **No.** Ghidra is a software reverse engineering framework —
+disassembly, assembly, decompilation, graphing, and scripting (README
+verbatim) — with no credential-guessing, spraying, or cracking surface
+of any kind: it never sends a guess anywhere. Its GhidraServer tree
+does ship login modules (password-file, JAAS, Kerberos, PKI, SSH), but
+those are verifier-side authentication for the collaboration server —
+a login is enforced, never guessed. The org's credential-adjacent
+projects are archived test-PKI and key-custody tools. Nothing here
+spends.
+
+| Item | Upstream | License (read from file) | Activity at 2026-10-03 | Verdict |
+|---|---|---|---|---|
+| Ghidra | NationalSecurityAgency/ghidra | **Apache-2.0** at the root (LICENSE read verbatim) — but the tree is **not uniformly Apache**: a top-level `GPL/` directory ships GNU-derived components (DemanglerGnu, GnuDisassembler — "leverage the binutils disassembler capabilities", README verbatim) and `GPL/licenses/` holds GPL-2, GPL-2+Classpath, GPL-3, GPL-3-linking-permitted, LGPL-2.1 (incl. an LGPL-2.1 icon-set text), LGPL-3.0, and Public-Domain texts. GitHub's badge says Apache-2.0; the distribution is mixed — same badge-vs-tree shape as hashcat's null LICENSE (§1.2) | pushed 2026-09-30; v12.1.4 (2026-09-21, `Ghidra_12.1.4_build`, release SHA-256 published on the release page); ~80.3k★ | **Not adopted as instrument or dependency** (§4). Two contact surfaces recorded: (a) headless batch mode — README verbatim "can be run in both user-interactive and automated modes", entry point `<GhidraInstallDir>/support/analyzeHeadless` per GettingStarted.md — so Ghidra is *drivable* through the executor seam like any external binary; that surface is kept for the authoring-time trigger below, never for the runtime loop; (b) the license composition is a standing caution: citation and argv only, and the tree must never be bundled or redistributed with ours |
+| ghidra-data | NationalSecurityAgency/ghidra-data | Apache-2.0 ("governed by the same licensing … as Ghidra", README verbatim) | pushed 2026-09-04; 218★ | Not adopted. FID databases and data-type archives for the SRE workflow — data, not instruments |
+| ghidra-volatility, ghidra-frida, ghidra-lisa, ghidra-extensions | same org | `NOASSERTION`/none (GitHub API `license.spdx_id`) | pushed 2025-03 → 2026-01 | **Not adopted.** Trace/analysis extensions (README verbatim): Volatility-based analysis of QEMU targets via Ghidra traceRMI; Frida-based analysis via traceRMI; abstract-interpretation/taint extension (LiSA); a low-support extension dump ("CAVEAT EMPTOR"). ghidra-volatility (a Volatility *command bridge* — hashdump-class recovery lives in Volatility's own plugins), ghidra-frida (live-process memory, registers, stacks), and ghidra-lisa (taint queries) can all touch credential *material* — and that is always harvesting: the reconnaissance side of the door, handed over under §2.4's sealed-export contract (BABAYAGA then cracks via hashcat), not a spending capability |
+| MADCert (archived) | same org | **MIT** (LICENSE.md read from file; GitHub's classifier reports `NOASSERTION` — its "The MIT License" heading defeats the detector, a badge-lie instance) | archived; pushed 2025-02-03 | Not adopted. Test-PKI factory (root/intermediate CAs, user and server certs) — a plausible fixture generator for the B14 lab, but archived; the lab builds its own fixtures rather than take a dependency on a dead repo (permissive license, so the refusal is maintenance, not redistribution) |
+| kmyth, pelz (archived) | same org | Apache-2.0 each | archived 2024 | Not adopted. Key-material custody — kmyth: TPM seal/unseal + KMIP utilities; pelz: KMIP-backed key wrap/unwrap service on SGX, plus an Accumulo crypto plugin. No PKCS#11 surface in either (attacker-checked); none of it guesses a credential |
+| lemongraph | same org | `NOASSERTION` | pushed 2026-04-30; ~1.2k★ | Not adopted. "Log-based transactional graph engine" is the nearest architectural cousin to the event-sourced attempt ledger + `access`/`grants_access` export (§2.4, B3) — take it as confirmation of the shape, no code; the ledger schema is already adjudicated |
+| seabee | same org | `NOASSERTION` | pushed 2026-09-30 | Not adopted. eBPF policy hardening against privileged attackers — host defense on the other side of the gate question |
+| Remainder of the org (78 repos) | same org | Apache-2.0 / BSD-2 / BSD-3 / GPL-2.0 / Other, per repo | mostly 2019–2026 | **Out of scope.** The datawave/timely/Accumulo big-data stack (~40 repos), qgis-* ×13, and one-offs (emissary, skills-*, Foundation formal-crypto specs, TraceAnalysis, openflame, dnf-model-counting, qonduit, call-stack-profiler, lemongrenade, XORSATFilter, enigma-simulator, PACE/PACE-python, SIMP, maat, DCP, accumulo-python3, rank-based-linkage, fractalrabbit) — query stacks, GIS plugins, trajectory simulation, attestation, file copy, an Enigma teaching notebook; none of it spends a credential (the kill scan's nearest miss was datawave-authorization-service, a JWT *verifier* endpoint). Recorded so the org is not re-scanned piecemeal |
+
+**Deferred with trigger (recorded so it is not re-proposed):** Ghidra
+as an *authoring-time* adjunct, never a runtime instrument. If an
+engagement needs an instrument module for an auth scheme that cannot
+be built from documented protocol behavior — an undocumented custom
+hash or wire format in a client or server binary — headless scriptable
+analysis is the standard way to recover the scheme's shape before
+writing the module. That work happens outside the engine, sees no
+credentials, and lands as a module like any other (§1 preamble:
+external binary, its own repo and license). Until such an engagement
+exists, Ghidra is not installed, not cited as a dependency, and
+appears in no manifest.
+
+### 1.6 Mission re-evaluation — the phase-2 identity (2026-10-03)
+
+Operator redesign (2026-10-03): BABAYAGA is the **phase-2 operator** of a
+pentest — reverse engineering, lateral movement, credential spending —
+where phase-1 reconnaissance stands. §1.5 answered the *spend-only*
+question ("does anything here spend a credential?"); its facts stand, its
+adoption verdicts are mission-scoped and are re-judged here against the
+phase-2 mission (RE / lateral / spend / candidate-generation / lab
+fixtures). Primary-source re-check same day; root license probes
+(LICENSE, LICENSE.md, LICENSE.txt) were initially read as a provenance
+check and are not one — the adversarial pass below replaced them with
+recursive tree search (errata at the end of this section).
+
+| Item | §1.5 verdict | §1.6 verdict (phase-2) | Reason |
+|---|---|---|---|
+| ghidra | Not adopted | **ADOPT as the RE instrument** (FLIP) | The RE framework, first-class under the phase-2 mission: `analyzeHeadless` drives through the executor seam like any external binary (§1.5's own deferred note generalized to the mission). License caution UNCHANGED and becomes a manifest note: Apache-2.0 root over a `GPL/` GNU-derived subtree (DemanglerGnu/GnuDisassembler, binutils lineage) — citation + argv only, never bundled, never vendored |
+| ghidra-data | Not adopted ("data, not instruments") | **ADOPT as the RE data pack** (FLIP) | FID databases + type archives are the decompiler's fuel — companion data in the nuclei-templates shape: mirrored, loaded at RE time, never a code dependency. Apache-2.0 (LICENSE read from file, 2026-10-03) |
+| ghidra-frida | Not adopted | **ADOPT as the dynamic-RE extension** (FLIP) | The code deliverable — the `ghidrafrida` Python package at `src/main/py/` — is **Apache-2.0** (`src/main/py/LICENSE` + pyproject.toml classifier, in-tree since 2024-04-25); provenance is provable and the §1.5 exclusion dies. Frida-based tracing via traceRMI is core dynamic RE. Runtime dep on Frida itself is unvendored (argv/extension, never a code dependency). Scope caveat: the non-py trivia (build.gradle, Module.manifest) carries no headers (unverifiable U1) |
+| ghidra-lisa | Not adopted | Not adopted (stands, reason sharpened) | Taint / abstract-interpretation queries are RE value, but a recursive tree search (94 paths) finds **zero** license/copying/notice files anywhere — including for the bundled third-party LiSA library (U4). The §1 provenance doctrine applies here and only here among the three satellites |
+| ghidra-volatility | Not adopted | Not adopted — copyleft trap (reason replaced) | Two **VSL-1.0** texts license the Volatility side (`VOLATILITY_LICENSE.txt`, `src/main/py/LICENSE.txt`; the API's `NOASSERTION` is a *detected* file, not absence). VSL "Additions" explicitly reaches "any software designed to execute the software and parse its results, such as a wrapper" — a **copyleft obligation over the bridge**, in the mysqlclient-contamination shape §2.3 already refused. Not a provenance void; a worse one. Re-evaluate trigger: license interpretation settles (U2) or upstream relicenses |
+| ghidra-extensions | Not adopted | Not adopted (stands) | CAVEAT EMPTOR dump, no license |
+| MADCert | Not adopted (archived) | Stands, with a lab note | The phase-2 lab (B14) now needs AD/PKI fixtures and MADCert is a plausible factory, but it is archived — the lab still builds its own fixtures rather than depend on a dead repo |
+| kmyth, pelz, lemongraph, seabee, PACE | Not adopted | Stands | Key custody / ledger cousin / host defense / Accumulo at-rest crypto — none is RE, lateral, or spend |
+| TraceAnalysis | Not named (lost in the one-off list) | **ADOPT as the dynamic-trace RE suite** (FLIP) | Execution-trace generation/analysis: `ghidra-lifter`, the `ghidra-tracemadness` Ghidra module, dynamic-dataflow plugins (`pointsto`, `fntrack`, `cbranch`, `fpmodels`, `syscalls`), and five tracer backends (QEMU-user / Unicorn / PIN / PANDA / icicle). Dual **Apache-2.0/MIT** (`LICENSE-APACHE` + `LICENSE-MIT`) — the org's best-licensed RE candidate after ghidra core. Per-component pinning lands in manifests when first driven |
+| Remainder of the org (77 repos) | Out of scope | Stands | Re-screened name-by-name in the adversarial pass: nothing else is RE, lateral, or spend; the nearest remains datawave-authorization-service, a JWT *verifier* (verifier-side — enforced, never guessed). Opaque-named repos (XORSATFilter, dnf-model-counting, rank-based-linkage, fractalrabbit, qonduit) were judged on descriptions only (U3) |
+
+§0's negative finding ("nothing in the NSA org spends a credential")
+stands as a fact. What changed is the adoption criterion: a phase-2
+operator looks for RE and lateral capability as well as spend.
+
+**Killed during the §1.6 adversarial pass (2026-10-03, recorded not
+dropped):** (1) "ghidra-frida has no LICENSE" — false: `src/main/py/LICENSE`
+is Apache-2.0, in-tree 17 months; the root-only probe was the wrong
+depth and the verdict flipped to adopt. (2) "ghidra-volatility has no
+LICENSE" — false: VSL-1.0 texts exist; the real risk is the VSL
+"Additions" copyleft over wrappers, so the exclusion stands on a
+different (worse) ground. (3) "root probes consistent with
+NOASSERTION" — false: three of four APIs report `null`, and the one
+`NOASSERTION` is a detected VSL file; root-only filename probing can
+never support a no-license conclusion. (4) "nothing in the remainder is
+RE-class" — false: TraceAnalysis is a dual-Apache/MIT execution-trace
+RE suite with a Ghidra module inside it. Survived intact: ghidra +
+ghidra-data adoptions (analyzeHeadless verified from
+analyzeHeadlessREADME.md), ghidra-lisa's no-license-anywhere finding,
+the README characterizations of all three satellites, and the 89/78/77
+arithmetic.
 
 ## 2. Patterns
 
@@ -250,6 +354,8 @@ last. ★ = top five by cost/benefit (B1, B2, B4, B3, B9).
 | RDP native support | No maintained pure client library (measured); if ever needed, FreeRDP (Apache-2.0) rides the executor like any binary |
 | Go/Rust core rewrite | The orchestrator is IO-bound and the heavy tools are already native — a rewrite buys throughput the instrument layer already delivers |
 | LLM-driven attempt planning | Unguided LLM agency benchmarks bound this class (12–18%); BABAYAGA's scheduler is deterministic — an LLM may propose wordlist hypotheses but never transitions attempts (forbidden-actor pattern) |
+| Ghidra as an instrument or dependency | It reverse-engineers binaries; it never guesses a credential (§1.5 — its GhidraServer login modules are verifier-side authentication). The one legitimate contact surface — headless analysis while *authoring* a module against an undocumented auth scheme — is authoring-time work that sees no credentials and ships as a normal external-binary module. The `GPL/` GNU-derived tree inside an Apache-2.0 root also rules out any bundling: citation and argv only, like every instrument |
+| NSA-org projects (ghidra-* satellites, MADCert, kmyth, pelz, lemongraph, seabee, PACE) | None spend credentials (§1.5): the satellites extend the SRE workflow (memory-forensics and taint surfaces are harvesting = recon side of the door); MADCert/kmyth/pelz are archived cert/key custody; lemongraph is at most an architectural cousin of the ledger; seabee is host defense; PACE is Accumulo at-rest crypto |
 
 ## 5. Credibility statement
 
@@ -295,6 +401,31 @@ version numbers (proxy.golang.org unreachable); AWS jitter doctrine;
 unreachable); the "no token bucket anywhere" claim beyond the six
 tools measured.
 
+**Round 2 (2026-10-03), Ghidra + NSA-org adjacency (§1.5):** ghidra
+LICENSE read verbatim from raw.githubusercontent.com (Apache-2.0
+confirmed); `GPL/` and `GPL/licenses/` directory inventories and
+per-repo metadata (license.spdx_id, archived, pushed_at, stars) via
+the GitHub REST API; GnuDisassembler README, root README,
+GhidraDocs/GettingStarted.md, MADCert LICENSE.md, and the five
+ghidra-* satellite READMEs read verbatim; the org repository list
+(3 pages, 89 repos) and the releases page read directly. One
+adversarial pass followed (dedicated killer subagent; full-tree
+scans, satellite source reads, and a counterexample hunt over all 89
+repos). **Killed and corrected in that pass:** "no authentication
+surface of any kind" (false — GhidraServer ships verifier-side login
+modules; corrected to the guess/verifier distinction); "MADCert is
+not redistribution-licensed" (false — LICENSE.md is MIT; the
+`NOASSERTION` classifier is a heading misdetect); "kmyth/pelz are
+PKCS#11" (false — KMIP/TPM/SGX key custody, zero PKCS surfaces);
+"ghidra-volatility and ghidra-lisa are the only material-touching
+pieces" (false — ghidra-frida traces live-process memory, and
+ghidra-volatility is a command bridge rather than a hash-recovery
+tool). **Survived intact:** the Apache-2.0 root + `GPL/` mixed-tree
+finding; analyzeHeadless documentation; and the core scope verdict —
+nothing in the org spends a credential (kill scan across all 89).
+Must not be cited as fact without re-fetch: star counts and
+`pushed_at` (drift daily).
+
 ## 6. Acceptance stamp
 
 - **One adversarial round passed (2026-09-28).** Every load-bearing
@@ -311,3 +442,9 @@ tools measured.
 - **Errata applied:** the six killed/corrected items of §5 are recorded
   above rather than silently dropped.
 - **Data timestamps:** all upstream snapshots 2026-09-28.
+- **Round 2 (2026-10-03) accepted after one adversarial pass:** a
+  dedicated killer attacked §1.5 against primary sources plus an
+  89-repo counterexample hunt; the scope verdict ("nothing in the NSA
+  org spends") and the license-composition finding survived, four
+  fact/wording claims were killed and corrected (errata in §5).
+  Round 1's stamp above stands unchanged.

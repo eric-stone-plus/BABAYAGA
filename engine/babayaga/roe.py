@@ -1,4 +1,4 @@
-'ROE (rules of engagement) object: load, validate, digest, coverage checks.\n\nThe ROE is per-engagement authorization-as-data. Fail-closed everywhere:\n- an absent or malformed field is a refusal, never a default;\n- digest() is what gets hashed into sealed campaign evidence;\n- check_target enforces the v0 LAB-ONLY guard (loopback only) on top of the\n  ROE\'s own target list.\n\n- `on_detect` (optional): one of ON_DETECT = annotate|cooldown|halt — a\n  CLOSED vocabulary, validated when present. Detection is an operational\n  signal (the ledger\'s detection.annotated event), never a reconcile\n  outcome. Engine-side behavior at v2 never exceeds `annotate`: cooldown\n  and halt are operator-declared policy the engine records but does not yet\n  act on (post-v2); declaring them is valid, expecting the engine to pace\n  or stop on them is not yet wired.\n- `actions` (optional): subset of schema.ACTION_KINDS; absent = guess-only\n  (every v1 ROE). When "exec" is declared, `budgets.per_action` and\n  `targets[].tier` become require-or-refuse — see validate().\n'
+'ROE (rules of engagement) object: load, validate, digest, coverage checks.\n\nThe ROE is per-engagement authorization-as-data. Fail-closed everywhere:\n- an absent or malformed field is a refusal, never a default;\n- digest() is what gets hashed into sealed campaign evidence;\n- check_target enforces target coverage on top of the\n  ROE\'s own target list.\n\n- `on_detect` (optional): one of ON_DETECT = annotate|cooldown|halt — a\n  CLOSED vocabulary, validated when present. Detection is an operational\n  signal (the ledger\'s detection.annotated event), never a reconcile\n  outcome. Engine-side behavior at v2 never exceeds `annotate`: cooldown\n  and halt are operator-declared policy the engine records but does not yet\n  act on (post-v2); declaring them is valid, expecting the engine to pace\n  or stop on them is not yet wired.\n- `actions` (optional): subset of schema.ACTION_KINDS; absent = guess-only\n  (every v1 ROE). When "exec" is declared, `budgets.per_action` and\n  `targets[].tier` become require-or-refuse — see validate().\n'
 
 from __future__ import annotations
 
@@ -214,7 +214,7 @@ def validate(obj: object) -> list[str]:
     return errors
 
 
-def _resolve_host(host: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address | None:
+def resolve_host(host: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address | None:
     try:
         return ipaddress.ip_address(host)
     except ValueError:
@@ -236,7 +236,7 @@ def check_target(obj: dict, host: str, port: int,
     'Refusal tuple for a (host, port) attempt request on an action axis.'
     if action_kind not in ACTION_KINDS:
         return False, f"unknown action_kind {action_kind!r} (closed: {ACTION_KINDS})"
-    addr = _resolve_host(host)
+    addr = resolve_host(host)
     if addr is None:
         return False, f"cannot resolve target host {host!r}"
     if LAB_ONLY and not addr.is_loopback:

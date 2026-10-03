@@ -1,0 +1,23 @@
+{
+  "schema": "babayaga.instrument-manifest/1",
+  "instrument": "sprayhound",
+  "binary": "sprayhound",
+  "upstream": {
+    "repo": "Hackndo/sprayhound",
+    "license": "MIT",
+    "relationship": "runtime-argv",
+    "vendored": false
+  },
+  "version": {
+    "probe_argv": [
+      "-h"
+    ],
+    "pattern": "sprayhound v(\\d+\\.\\d+\\.\\d+)",
+    "min": "0.0.4",
+    "max_exclusive": "1.0",
+    "anchored": "0.0.4",
+    "anchored_date": "2026-10-03"
+  },
+  "requires_standard_ports": false,
+  "notes": "Policy-aware spray instrument (RESEARCH.md \u00a71.3): reads lockout policy + per-user badPwdCount, skips users too close to threshold (-t/--unsafe). The only policy reader in the surveyed field. Needs a valid domain account for the LDAP read."
+}

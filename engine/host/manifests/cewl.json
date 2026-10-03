@@ -1,0 +1,23 @@
+{
+  "schema": "babayaga.instrument-manifest/1",
+  "instrument": "cewl",
+  "binary": "cewl",
+  "upstream": {
+    "repo": "digininja/CeWL",
+    "license": "dual CC-BY-SA-2.0 / GPL-3+ (source header; no LICENSE file)",
+    "relationship": "runtime-argv",
+    "vendored": false
+  },
+  "version": {
+    "probe_argv": [
+      "--version"
+    ],
+    "pattern": "CeWL (\\d+\\.\\d+\\.\\d+)",
+    "min": "6.3.1",
+    "max_exclusive": "7.0",
+    "anchored": "6.3.1",
+    "anchored_date": "2026-10-03"
+  },
+  "requires_standard_ports": false,
+  "notes": "Candidate-generation instrument (RESEARCH.md \u00a71.4): site-derived wordlists, metadata usernames. Target-facing web crawling is out of scope for this instrument; CeWL runs under the ROE on engagement-supplied material. Ruby; gem deps (mime, mime-types, mini_exiftool, nokogiri) in the user gem dir; tree under the operator's tool residency."
+}

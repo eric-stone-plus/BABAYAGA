@@ -61,15 +61,25 @@ _FOUND_RE = re.compile(
     r"(?:   misc: \S*)?"
     r"   login: (?P<login>\S+)   password: (?P<password>.*)$"
 )
+# Numeric fields are bounded (\d{1,18}): a longer digit run stops matching,
+# so the line falls to "unknown" and poisons the run. An unbounded \d+ would
+# let a forged 4300+-digit count crash int() at classification time (Python's
+# int<->str digit cap) — a parser must never raise on adversarial output.
 _SUMMARY_RE = re.compile(
-    r"^(?P<done>\d+) of (?P<total>\d+) targets? (?:successfully )?completed, "
-    r"(?P<found>\d+) valid passwords? found$"
+    r"^(?P<done>\d{1,18}) of (?P<total>\d{1,18}) targets? (?:successfully )?completed, "
+    r"(?P<found>\d{1,18}) valid passwords? found$"
 )
 _DATA_RE = re.compile(
-    r"^\[DATA\] max \d+ tasks? per \d+ servers?, overall \d+ tasks?, "
-    r"(?P<tries>\d+) login (?:try|tries)"
+    r"^\[DATA\] max \d{1,18} tasks? per \d{1,18} servers?, overall \d{1,18} tasks?, "
+    r"(?P<tries>\d{1,18}) login (?:try|tries)"
 )
 _DATA_ATTACKING_RE = re.compile(r"^\[DATA\] attacking \S+")
+def _redact(line: str) -> str:
+    ''
+    out = re.sub(r'"[^"]*"', '"***"', line)
+    return out[:160]
+
+
 _ATTEMPT_RE = re.compile(
     r"^\[(?:REDO-|RE-)?ATTEMPT\] target \S+ - login \"(?P<login>[^\"]*)\""
     r" - pass \"[^\"]*\" - \d+ of \d+ \[child \d+\] \(\d+/\d+\)$"
@@ -91,6 +101,9 @@ _WARNING_RE = re.compile(r"^\[WARNING\] ")
 # interleaved dump refuses the run, as it should.
 _VERBOSE_RE = re.compile(r"^\[VERBOSE\] ")
 _DEBUG_RE = re.compile(r"^\[DEBUG\] ")
+# hydra 9.8dev prints [INFO] chrome on every run (providers warning etc.)
+# and this build has no other [NOTE]-class shapes; both are non-evidence.
+_INFO_RE = re.compile(r"^\[(?:INFO|NOTE)\] ")
 _LOCKOUT_RES = (
     re.compile(r"^X-Lab-Lockout:\s*true\s*$", re.IGNORECASE),
     re.compile(r"^X-Lab-Outcome:\s*locked\s*$", re.IGNORECASE),
@@ -109,11 +122,18 @@ class HydraStreamParser:
         self._found_digests: list[str] = []
         self._announced_tries: int | None = None
         self._attempts_seen = 0
+        self._unknown_samples: list[str] = []
         self._errors = 0
         self._warnings = 0
         self._unknown = 0
         self._summary: tuple[int, int, int] | None = None
         self._finished_seen = False
+        # Duplicate verdict-bearing lines: an identical re-print is tolerated
+        # (stream-split duplication), a CONTRADICTING one is ambiguous
+        # instrument output — last-wins would let a forged trailing summary
+        # overturn the real verdict, so conflicts poison the run.
+        self._summary_conflicts = 0
+        self._tries_conflicts = 0
 
     def feed(self, line: str) -> AttemptRecord | None:
         ''
@@ -133,18 +153,34 @@ class HydraStreamParser:
     def _classify(self, line: str) -> AttemptRecord | None:
         m = _FOUND_RE.match(line)
         if m:
-            self._found_digests.append(hashlib.sha256(
-                f"{m.group('login')}:{m.group('password')}".encode("utf-8")
-            ).hexdigest())
+            try:
+                digest = hashlib.sha256(
+                    f"{m.group('login')}:{m.group('password')}".encode("utf-8")
+                ).hexdigest()
+            except UnicodeEncodeError:
+                # Undecodable bytes (e.g. surrogate escapes) bled into a
+                # found-shaped line: ambiguous evidence — poison the run,
+                # never crash and never emit a valid hint for it.
+                self._unknown += 1
+                return AttemptRecord(None, "unknown", "unknown")
+            self._found_digests.append(digest)
             return AttemptRecord(m.group("login"), "valid", "found")
         m = _SUMMARY_RE.match(line)
         if m:
-            self._summary = (int(m.group("done")), int(m.group("total")),
-                             int(m.group("found")))
+            summary = (int(m.group("done")), int(m.group("total")),
+                       int(m.group("found")))
+            if self._summary is None:
+                self._summary = summary
+            elif summary != self._summary:
+                self._summary_conflicts += 1
             return None
         m = _DATA_RE.match(line)
         if m:
-            self._announced_tries = int(m.group("tries"))
+            tries = int(m.group("tries"))
+            if self._announced_tries is None:
+                self._announced_tries = tries
+            elif tries != self._announced_tries:
+                self._tries_conflicts += 1
             return None
         if _DATA_ATTACKING_RE.match(line):
             return None
@@ -168,13 +204,16 @@ class HydraStreamParser:
             return AttemptRecord(None, "unknown", "warning")
         if any(r.match(line) for r in _LOCKOUT_RES):
             return AttemptRecord(None, "locked", "signal_lockout")
-        if _VERBOSE_RE.match(line) or _DEBUG_RE.match(line):
+        if (_VERBOSE_RE.match(line) or _DEBUG_RE.match(line)
+                or _INFO_RE.match(line)):
             return None
         if _BANNER_RE.match(line):
             if " finished at " in line:
                 self._finished_seen = True
             return None
         self._unknown += 1
+        if len(self._unknown_samples) < 3:
+            self._unknown_samples.append(_redact(line))
         return AttemptRecord(None, "unknown", "unknown")
 
     def finish(self) -> RunSummary:
@@ -191,9 +230,19 @@ class HydraStreamParser:
         if self._summary is not None and not self._finished_seen:
             reasons.append("no 'finished at' line: hydra did not exit "
                            "gracefully after the summary")
+        if self._summary_conflicts:
+            reasons.append(f"{self._summary_conflicts} contradictory run "
+                           "summary line(s): ambiguous instrument output is "
+                           "a refusal path")
+        if self._tries_conflicts:
+            reasons.append(f"{self._tries_conflicts} contradictory [DATA] "
+                           "login-tries announcement(s): ambiguous instrument "
+                           "output is a refusal path")
         if self._unknown:
+            sample = (" | samples: " + "; ".join(self._unknown_samples)
+                      if self._unknown_samples else "")
             reasons.append(f"{self._unknown} unrecognized line(s): ambiguous "
-                           "instrument output is a refusal path")
+                           f"instrument output is a refusal path{sample}")
         if self._warnings:
             reasons.append(f"{self._warnings} warning line(s): instrument "
                            "reported unmodeled behavior")

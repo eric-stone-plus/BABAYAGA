@@ -1,0 +1,20 @@
+{
+  "id": "R-CRED-SPRAY-005",
+  "name": "mail imap spray, low-and-slow tier (10-minute cadence)",
+  "pack": "spray",
+  "match": {
+    "service": "imap"
+  },
+  "throttle": {
+    "instrument_flags": [
+      "-t",
+      "1"
+    ],
+    "slice_cadence_seconds": 600
+  },
+  "budget": {
+    "per_principal_per_run_max": 6
+  },
+  "lockout_abort_after": 1,
+  "refusal_rationale": "mail stores are lockout-prone and IMAP is often the 2FA-bypassing direct channel (Coremail-class deployments), so a hit here is high-value AND a lockout here is high-harm; the tier's restraint is the point. Any request to run it faster or with a wider budget is refused."
+}

@@ -1,0 +1,20 @@
+{
+  "id": "R-CRED-SPRAY-004",
+  "name": "mail pop3 spray, low-and-slow tier (10-minute cadence)",
+  "pack": "spray",
+  "match": {
+    "service": "pop3"
+  },
+  "throttle": {
+    "instrument_flags": [
+      "-t",
+      "1"
+    ],
+    "slice_cadence_seconds": 600
+  },
+  "budget": {
+    "per_principal_per_run_max": 6
+  },
+  "lockout_abort_after": 1,
+  "refusal_rationale": "mail stores are lockout-prone and their failure counters are visible to the operator only after the fact; the tier exists for engagements whose risk appetite is minimal. Any request to run it faster or with a wider budget is refused because the tier's whole value is its restraint."
+}

@@ -127,9 +127,13 @@ def _migrate_1_to_2(conn: sqlite3.Connection) -> None:
             "UPDATE meta SET value=? WHERE key='schema_version'",
             (str(SCHEMA_VERSION),))
         conn.execute("COMMIT")
-    except Exception:
+    except Exception as exc:
         conn.execute("ROLLBACK")
-        raise
+        if isinstance(exc, SchemaError):
+            raise
+        # SchemaError's contract covers "a migration that could not
+        # complete" — never leak a raw sqlite3 error type across connect().
+        raise SchemaError(f"v1->v2 migration could not complete: {exc}") from exc
 
 
 def connect(path: str) -> sqlite3.Connection:

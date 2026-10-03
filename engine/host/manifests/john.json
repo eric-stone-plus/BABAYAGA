@@ -1,0 +1,23 @@
+{
+  "schema": "babayaga.instrument-manifest/1",
+  "instrument": "john",
+  "binary": "john",
+  "upstream": {
+    "repo": "openwall/john",
+    "license": "GPL-2.0+ with OpenSSL/unRAR exceptions and per-file BSD islands",
+    "relationship": "runtime-argv",
+    "vendored": false
+  },
+  "version": {
+    "probe_argv": [
+      "--list=build-info"
+    ],
+    "pattern": "Version: (\\d+\\.\\d+\\.\\d+)",
+    "min": "1.9.0",
+    "max_exclusive": "2.0",
+    "anchored": "1.9.0",
+    "anchored_date": "2026-10-03"
+  },
+  "requires_standard_ports": false,
+  "notes": "Second cracking instrument + node-split pattern (RESEARCH.md \u00a71.2). Anchored build is bleeding-jumbo: 1.9.0-jumbo-1+bleeding-dd650923a3 (mirror pin dd650923a, tools/mirrors/john.git, CI-stripped). --node=MIN[-MAX]/TOTAL is the keyspace split."
+}

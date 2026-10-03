@@ -1,0 +1,20 @@
+{
+  "id": "R-CRED-SPRAY-006",
+  "name": "mail smtp-AUTH spray, low-and-slow tier (10-minute cadence)",
+  "pack": "spray",
+  "match": {
+    "service": "smtp"
+  },
+  "throttle": {
+    "instrument_flags": [
+      "-t",
+      "1"
+    ],
+    "slice_cadence_seconds": 600
+  },
+  "budget": {
+    "per_principal_per_run_max": 6
+  },
+  "lockout_abort_after": 1,
+  "refusal_rationale": "Coremail-class SMTP AUTH is often the plaintext, 2FA-less channel (vuln-0001 class), so a hit is high-value AND a lockout is high-harm; the tier's restraint is the point. Any request to run it faster or with a wider budget is refused."
+}

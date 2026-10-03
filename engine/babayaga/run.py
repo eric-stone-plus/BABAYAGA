@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import contextlib
 import hashlib
 import json
 import os
@@ -13,7 +14,7 @@ import uuid
 from collections.abc import Collection
 from pathlib import Path
 
-from . import budget, config, executor, manifests, rulecheck
+from . import budget, config, egress, executor, manifests, rulecheck
 from . import roe as roe_mod
 from . import seal as seal_mod
 from .ledger import Ledger
@@ -92,7 +93,7 @@ def _load_roe(roe_path: str | None):
         targets = obj["targets"]
         if len(targets) != 1 or len(targets[0]["ports"]) != 1:
             raise RunRefusal(
-                "v0 lab mode engages exactly one declared (host, port): the "
+                "one slice engages exactly one declared (host, port): the "
                 "ROE must carry one target with one port")
         return obj, targets[0]["host"], targets[0]["ports"][0]
     src = Path(__file__).parent / "defaults" / "roe.example.json"
@@ -100,7 +101,7 @@ def _load_roe(roe_path: str | None):
     return obj, None, None  # port adapted to the fixture below
 
 
-def _select_rule(rules_dir: Path, budget_per_run: int) -> dict:
+def _select_rule(rules_dir: Path, budget_per_run: int, service: str = SERVICE) -> dict:
     """The tightest spray-pack rule covering the ROE budget; refuse if none."""
     report = rulecheck.check_corpus(rules_dir)
     if not report.ok:
@@ -109,13 +110,13 @@ def _select_rule(rules_dir: Path, budget_per_run: int) -> dict:
     covering = []
     for path in sorted(rules_dir.rglob("*.json")):
         rule = json.loads(path.read_text(encoding="utf-8"))
-        if rule.get("pack") != "spray" or rule.get("match", {}).get("service") != SERVICE:
+        if rule.get("pack") != "spray" or rule.get("match", {}).get("service") != service:
             continue
         if rule["budget"]["per_principal_per_run_max"] >= budget_per_run:
             covering.append(rule)
     if not covering:
         raise RunRefusal(
-            f"no spray rule covers service {SERVICE!r} at per-principal "
+            f"no spray rule covers service {service!r} at per-principal "
             f"budget {budget_per_run} — a run no rule covers is refused, "
             "never improvised")
     return min(covering, key=lambda r: (
@@ -139,6 +140,21 @@ def _anchored_hydra() -> tuple[Path, str]:
     if not ok:
         raise RunRefusal(detail)
     return path, discovered
+
+
+def _candidate_passwords(candidates_path: str | Path) -> list[str]:
+    "Engagement candidate list: one candidate per line, '#' comments allowed."
+    src = Path(candidates_path)
+    if not src.is_file():
+        raise RunRefusal(f"candidates file not found: {src}")
+    out = []
+    for line in src.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            out.append(line)
+    if not out:
+        raise RunRefusal(f"candidates file is empty: {src}")
+    return out
 
 
 def _lab_passwords() -> list[str]:
@@ -208,22 +224,47 @@ def _scrub_run_dir(run_dir: Path) -> None:
 # -------------------------------------------------------------------- run
 
 def run_lab(*, roe_path: str | None, home: Path) -> dict:
-    """Drive the full pipeline (module docstring); return the summary payload.
+    """Drive the full pipeline (module docstring) against the lab fixture."""
+    return _run(roe_path=roe_path, home=home, lab=True, candidates_path=None)
 
-    Raises RunRefusal / roe.RoeError / config.ConfigError /
-    manifests.ManifestError / seal.SealRefusal (all exit 2); anything else
-    bubbles to the CLI boundary as exit 1.
+
+def run_engagement(*, roe_path: str, home: Path, candidates_path: str) -> dict:
+    """Drive the full pipeline against a real ROE-declared (host, port).
+
+    The ROE must declare exactly one target with one port and the candidate
+    list comes from the engagement (never the lab demo list). The
+    reconciliation policy is the module docstring's conservative core: only
+    stream-proven outcomes are reconciled; the "invalid" claim holds because
+    roe.validate keeps every per-principal budget below the ROE's declared
+    lockout threshold (a locked principal is therefore unreachable inside
+    one slice — the lab's argument, stated for real targets).
     """
+    return _run(roe_path=roe_path, home=home, lab=False,
+                candidates_path=candidates_path)
+
+
+def _run(*, roe_path: str | None, home: Path, lab: bool,
+         candidates_path: str | None) -> dict:
     home = Path(home)
     obj, declared_host, declared_port = _load_roe(roe_path)
     engagement_id = obj["engagement_id"]
     if "/" in engagement_id or "\x00" in engagement_id:
         raise RunRefusal(f"engagement_id {engagement_id!r} is not path-safe")
+    if lab and declared_host is not None:
+        addr = roe_mod.resolve_host(declared_host)
+        if addr is not None and not addr.is_loopback:
+            raise RunRefusal(
+                f"--lab engages the loopback fixture: target {declared_host} "
+                "is not loopback — a non-loopback target is an engagement "
+                "run (drop --lab; pass --roe and --candidates)")
 
     # -- gates that need no fixture -------------------------------------
     window_ok, window_detail = roe_mod.check_window(obj)
     if not window_ok:
         raise RunRefusal(f"window gate: {window_detail}")
+    gate_reason = egress.launch_gate()
+    if gate_reason is not None:
+        raise RunRefusal(gate_reason)
     if declared_host is not None:
         target_ok, target_detail = roe_mod.check_target(obj, declared_host, declared_port)
         if not target_ok:
@@ -231,8 +272,12 @@ def run_lab(*, roe_path: str | None, home: Path) -> dict:
 
     budget_per_run = roe_mod.per_principal_budget(obj)
     principals = list(obj["principals"])
-    passwords = _lab_passwords()
-    rule = _select_rule(_engine_root() / "rules", budget_per_run)
+    passwords = (_lab_passwords() if lab
+                 else _candidate_passwords(candidates_path))
+    target = obj["targets"][0]
+    service = target.get("proto", SERVICE)
+    path = target.get("path", "/")
+    rule = _select_rule(_engine_root() / "rules", budget_per_run, service)
     hydra_bin, hydra_version = _anchored_hydra()
 
     campaign_dir = home / engagement_id
@@ -241,7 +286,16 @@ def run_lab(*, roe_path: str | None, home: Path) -> dict:
     run_dir.mkdir(parents=True, exist_ok=True)
     slice_id = run_dir.name
 
-    with _lab_fixture(declared_port or 0, run_dir) as (host, port):
+    if lab:
+        endpoint_ctx = _lab_fixture(declared_port or 0, run_dir)
+    else:
+        if declared_host is None:
+            raise RunRefusal(
+                "engagement runs require an explicit --roe with targets — "
+                "the default ROE is lab-fixture-only")
+        endpoint_ctx = contextlib.nullcontext((declared_host, declared_port))
+
+    with endpoint_ctx as (host, port):
         try:
             if declared_host is None:
                 # Default ROE: adapt the example to the fixture's ephemeral
@@ -293,10 +347,12 @@ def run_lab(*, roe_path: str | None, home: Path) -> dict:
                     led.dispatch(attempt_id)
 
                 argv = [
-                    str(hydra_bin), "-C", executor.PAIR_LIST_TOKEN, "-K", "-I", "-f",
+                    str(hydra_bin), "-C", executor.PAIR_LIST_TOKEN, "-K", "-I", "-f", "-V",
                     *rule["throttle"]["instrument_flags"],
-                    "-s", str(port), declared_host, SERVICE, LAB_PATH,
+                    "-s", str(port), declared_host, service,
                 ]
+                if service.startswith("http"):
+                    argv.append(path)  # module option: URL path (http-* only)
                 problems = budget.check_flags(argv)
                 if problems:
                     raise RunRefusal("instrument argv violates flag policy: "
@@ -305,9 +361,11 @@ def run_lab(*, roe_path: str | None, home: Path) -> dict:
                 return _execute_and_reconcile(
                     led=led, argv=argv, pairs=[(u, p) for u, p, _, _ in planned],
                     planned=planned, run_dir=run_dir, campaign_dir=campaign_dir,
+                    lab=lab,
                     slice_id=slice_id, obj=obj, roe_digest=roe_digest, rule=rule,
                     hydra_bin=hydra_bin, hydra_version=hydra_version,
-                    host=declared_host, port=port, budget_per_run=budget_per_run)
+                    host=declared_host, port=port, budget_per_run=budget_per_run,
+                    service=service)
             finally:
                 led.close()
         finally:
@@ -318,9 +376,10 @@ def run_lab(*, roe_path: str | None, home: Path) -> dict:
                 pass
 
 
-def _execute_and_reconcile(*, led, argv, pairs, planned, run_dir, campaign_dir,
+def _execute_and_reconcile(*, led, argv, pairs, planned, run_dir, campaign_dir, lab,
                            slice_id, obj, roe_digest, rule, hydra_bin,
-                           hydra_version, host, port, budget_per_run) -> dict:
+                           hydra_version, host, port, budget_per_run,
+                           service: str = SERVICE) -> dict:
     exec_error = None
     result = None
     try:
@@ -414,8 +473,8 @@ def _execute_and_reconcile(*, led, argv, pairs, planned, run_dir, campaign_dir,
 
     return {
         "run_status": run_status if verify_ok else "seal_verify_failed",
-        "mode": "lab",
-        "target": f"{host}:{port}", "service": SERVICE,
+        "mode": "lab" if lab else "engagement",
+        "target": f"{host}:{port}", "service": service,
         "engagement_id": obj["engagement_id"],
         "campaign_dir": str(campaign_dir),
         "roe_digest": roe_digest,

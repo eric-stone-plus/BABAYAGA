@@ -55,48 +55,59 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     except OSError as exc:
         checks.append({"check": "babayaga_home", "pass": False, "detail": f"{home}: {exc}"})
 
-    # Tools anchoring (PC K3): hydra must NOT resolve on the session PATH;
-    # the anchored tools dir (config.tools_dir: BABAYAGA_TOOLS env >
-    # babayaga.toml > <repo>/tools) is the only legal resolver. Fail-closed.
-    hydra_on_path = shutil.which("hydra")
-    checks.append({
-        "check": "hydra_off_session_path",
-        "pass": hydra_on_path is None,
-        "detail": (f"hydra resolves on PATH at {hydra_on_path} — relocate it under "
-                   f"the tools anchor (one-time operator action)")
-        if hydra_on_path else "not on PATH",
-    })
-
-    hydra_bin: Path | None = None
+    # Tools anchoring (PC K3): NO instrument binary may resolve on the
+    # session PATH; the anchored tools dir (config.tools_dir:
+    # BABAYAGA_TOOLS env > babayaga.toml > <repo>/tools) is the only legal
+    # resolver. Per-instrument anchored + version-range checks follow the
+    # manifests (B18): out-of-range or unparseable output is a refusal,
+    # never a guess. Fail-closed for every manifest present.
+    anchored: dict[str, Path] = {}
     try:
         tools = config_mod.tools_dir()
-        candidate = config_mod.instrument_path("hydra")
-        if candidate.is_file() and os.access(candidate, os.X_OK):
-            hydra_bin = candidate
-            checks.append({"check": "hydra_anchored", "pass": True,
-                           "detail": f"{candidate} (tools_dir: {tools})"})
-        else:
-            checks.append({"check": "hydra_anchored", "pass": False,
-                           "detail": f"no executable hydra at {candidate} — anchor it "
-                                     f"(symlink into the build tree); doctor fails "
-                                     f"closed until then (the internal design notes)"})
-    except config_mod.ConfigError as exc:
-        checks.append({"check": "hydra_anchored", "pass": False, "detail": str(exc)})
-
-    # Manifest version-range check against the real binary's probe banner
-    # (B18): out-of-range or unparseable output is a refusal, never a guess.
-    if hydra_bin is not None:
+    except config_mod.ConfigError:
+        tools = None
+    for name in manifests_mod.available():
         try:
-            manifest = manifests_mod.load("hydra")
+            manifest = manifests_mod.load(name)
+        except manifests_mod.ManifestError as exc:
+            checks.append({"check": f"{name}_manifest", "pass": False, "detail": str(exc)})
+            continue
+        binary = manifest.get("binary", name)
+        on_path = shutil.which(binary)
+        checks.append({
+            "check": f"{name}_off_session_path",
+            "pass": on_path is None,
+            "detail": (f"{binary} resolves on PATH at {on_path} — relocate it under "
+                       f"the tools anchor (one-time operator action)")
+            if on_path else "not on PATH",
+        })
+        try:
+            candidate = config_mod.instrument_path(name)
+            if candidate.is_file() and os.access(candidate, os.X_OK):
+                anchored[name] = candidate
+                checks.append({"check": f"{name}_anchored", "pass": True,
+                               "detail": f"{candidate} (tools_dir: {tools})"})
+            else:
+                checks.append({"check": f"{name}_anchored", "pass": False,
+                               "detail": f"no executable {binary} at {candidate} — anchor "
+                                         f"it (symlink into the tools dir); doctor fails "
+                                         f"closed until then"})
+                continue
+        except config_mod.ConfigError as exc:
+            checks.append({"check": f"{name}_anchored", "pass": False, "detail": str(exc)})
+            continue
+        try:
             proc = subprocess.run(
-                [str(hydra_bin), *manifest["version"]["probe_argv"]],
+                [str(anchored[name]), *manifest["version"]["probe_argv"]],
                 capture_output=True, text=True, timeout=15)
             discovered = manifests_mod.extract_version(
                 manifest, proc.stdout + proc.stderr)
             ok, detail = manifests_mod.check_version(manifest, discovered)
-            checks.append({"check": "hydra_version", "pass": ok, "detail": detail})
+            checks.append({"check": f"{name}_version", "pass": ok, "detail": detail})
         except (manifests_mod.ManifestError, OSError, subprocess.SubprocessError) as exc:
-            checks.append({"check": "hydra_version", "pass": False, "detail": str(exc)})
+            checks.append({"check": f"{name}_version", "pass": False, "detail": str(exc)})
+
+    hydra_bin = anchored.get("hydra")
 
     # Opportunistic capability probes (info only, never load-bearing):
     caps: dict[str, str] = {}
@@ -109,6 +120,50 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     if hydra_bin is not None:
         caps["hydra_o_jsonv1"] = probe_hydra_output(str(hydra_bin))
     checks.append({"check": "capabilities", "pass": True, "detail": caps})
+
+    # Egress declaration report — the two stale promises in egress.py, now
+    # kept here: launch_gate's docstring ("a declared `direct` … which
+    # doctor WARNs on") and summary()'s ("Doctor prints this"). Reporter,
+    # never an enforcement point: launch_gate() is the run-boundary gate
+    # and its three refusal legs keep their own messages. Warn rows are
+    # `pass: True` — a warn never flips doctor's status; it makes a
+    # deliberate or broken declaration visible instead of silent.
+    from . import egress as egress_mod
+    esum = egress_mod.summary()
+    checks.append({
+        "check": "egress_declaration",
+        "pass": True,
+        "detail": {k: esum[k] for k in
+                   ("mode", "mode_declared", "mode_recognized", "proxy_lane")},
+    })
+    if esum["mode_declared"] and not esum["mode_recognized"]:
+        checks.append({
+            "check": "egress_mode_unrecognized", "pass": True, "warn": True,
+            "detail": f"{egress_mod.MODE_ENV} carries a value outside "
+                      f"{egress_mod.PROXY}|{egress_mod.DIRECT} — launch_gate "
+                      f"refuses such a launch (an unparseable mode reads as "
+                      f"the forbidden direct fallback)",
+        })
+    elif esum["mode"] == egress_mod.PROXY and not esum["proxy_lane"]:
+        checks.append({
+            "check": "egress_proxy_without_lane", "pass": True, "warn": True,
+            "detail": f"{egress_mod.MODE_ENV}=proxy but no lane in this "
+                      f"process env — launch_gate refuses such a launch "
+                      f"(every tool would run DIRECT while reporting proxy)",
+        })
+    elif esum["mode"] == egress_mod.DIRECT:
+        detail = (f"{egress_mod.MODE_ENV}=direct declared — the operator's "
+                  f"documented choice (launch_gate passes); instrument TCP "
+                  f"bypasses the lane. the internal design notes: proxy first")
+        if not esum["mode_declared"]:
+            detail = (f"{egress_mod.MODE_ENV} is undeclared and reads as "
+                      f"direct — the 2026-09-23 incident shape; launch_gate "
+                      f"refuses unless {egress_mod.ACCEPT_DIRECT_ENV}=1")
+        checks.append({
+            "check": "egress_direct_declared" if esum["mode_declared"]
+                     else "egress_mode_undeclared",
+            "pass": True, "warn": True, "detail": detail,
+        })
 
     payload = {"version": __version__, "lab_only": LAB_ONLY,
                "status": "ok" if all(c["pass"] for c in checks) else "refusal",
@@ -284,11 +339,6 @@ def cmd_export_access(args: argparse.Namespace) -> int:
 # ------------------------------------------------------------------ run
 
 def cmd_run(args: argparse.Namespace) -> int:
-    if not args.lab:
-        _emit({"refusal": "v0 is LAB-ONLY (the internal design notes): `babayaga run` "
-                          "requires --lab; engaging a non-lab target is not "
-                          "implemented and never defaultable"}, args.json)
-        return EXIT_REFUSAL
     from . import config as config_mod
     from . import manifests as manifests_mod
     from . import run as run_mod
@@ -296,7 +346,18 @@ def cmd_run(args: argparse.Namespace) -> int:
     from .ledger import LedgerRefusal
 
     try:
-        payload = run_mod.run_lab(roe_path=args.roe, home=home_dir())
+        if args.lab:
+            payload = run_mod.run_lab(roe_path=args.roe, home=home_dir())
+        else:
+            if not args.roe or not args.candidates:
+                _emit({"refusal": "engagement runs require --roe and "
+                                  "--candidates (the default ROE and demo "
+                                  "list are lab-fixture-only; the internal design notes)"},
+                      args.json)
+                return EXIT_REFUSAL
+            payload = run_mod.run_engagement(
+                roe_path=args.roe, home=home_dir(),
+                candidates_path=args.candidates)
     except (run_mod.RunRefusal, roe_mod.RoeError, config_mod.ConfigError,
             manifests_mod.ManifestError, seal_mod.SealRefusal,
             LedgerRefusal) as exc:
@@ -376,12 +437,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("run", help="the attempt runner (never a plugin tool, the internal design notes)")
     p.add_argument("--lab", action="store_true",
-                   help="REQUIRED at v0: engage the loopback lab fixture "
-                        "(engine/lab/http_get_lab.py, spawned as a subprocess)")
+                   help="engage the loopback lab fixture (demo path; "
+                        "engine/lab/http_get_lab.py, spawned as a subprocess)")
     p.add_argument("--roe", metavar="FILE",
-                   help="ROE file (one target, one port; the fixture binds that "
-                        "port). Default: engine/babayaga/defaults/roe.example.json "
-                        "adapted to the fixture's ephemeral port")
+                   help="ROE file (one target, one port). Default (--lab only): "
+                        "engine/babayaga/defaults/roe.example.json adapted to "
+                        "the fixture's ephemeral port")
+    p.add_argument("--candidates", metavar="FILE",
+                   help="engagement candidate list, one candidate per line "
+                        "(required without --lab; never the lab demo list)")
     p.add_argument("--json", action="store_true")
     p.set_defaults(fn=cmd_run)
 
