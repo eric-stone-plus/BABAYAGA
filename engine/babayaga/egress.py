@@ -1,4 +1,4 @@
-"Three code paths used to decide egress separately, reading two env vars with\ndifferent semantics and no shared truth:\n\nTwo axes, and they are not the same claim:\n\nSo this module answers the questions and reports both axes together\n(``summary()``); callers keep doing the IO. Nothing here sends traffic,\nresolves a name or reads a target.\n\nA third axis lives here too, still IO-free: the exit fingerprint's env\nnames and its rotation deadline math. The one sanctioned network read — a\nsingle GET against the operator-configured IP echo — is a separate module,\n``core/egress_probe.py``; this one only computes when that read is allowed\nto happen."
+"Three code paths used to decide egress separately, reading two env vars with\ndifferent semantics and no shared truth:\n\nTwo axes, and they are not the same claim:\n\nSo this module answers the questions and reports both axes together\n(``summary()``); callers keep doing the IO. Nothing here sends traffic,\nresolves a name or reads a target.\n\nA third axis lives here too, still IO-free: the exit fingerprint's env\nnames and its rotation deadline math. The one sanctioned network read — a\nsingle GET against the operator-configured IP echo — is a separate module,\n``the probe module``; this one only computes when that read is allowed\nto happen."
 
 from __future__ import annotations
 
@@ -196,7 +196,7 @@ def launch_gate() -> str | None:
             return None
         return (f"launch refused: {MODE_ENV} is undeclared, so the engine cannot "
                 f"tell a proxied lane from a silent direct fallback — the exact "
-                f"2026-09-23 incident shape (the internal design notes). Set {MODE_ENV} "
+                f"recorded incident shape (the internal design notes). Set {MODE_ENV} "
                 f"(proxy|direct) in the engine process's own environment, or "
                 f"explicitly accept a direct launch with {ACCEPT_DIRECT_ENV}=1")
     if mode() == PROXY and not proxy_lane_configured():
@@ -221,7 +221,7 @@ def echo_url() -> str:
 
 
 def echo_url_defect(url: str) -> str | None:
-    'None when ``url`` can be probed as an HTTP(S) echo, else the defect.\n\n    Pure string judgement — no socket, no DNS, no file read — so this module\n    keeps its IO-free contract while owning the shape rule beside\n    ``echo_url()``, the one reader. Three consumers hold this variable\n    (``scripts/egress-rotate.py``, ``core/egress_probe.py`` and the\n    orchestrator\'s launch verification) and they must not drift into three\n    definitions of "usable", which is what let the script fail open while\n    the engine failed closed.\n\n    Callers that MUTATE before probing must ask here first:\n    ``egress-rotate.py`` rebinds a class gateway eight lines before it parses\n    the endpoint, so a late catch is not a refusal — it is a half-finished\n    rotation plus a retry loop burning real gateway switches on a config\n    error that fails identically every time.\n\n    ``urlsplit`` alone is not the test: it never raises on a missing scheme\n    and its ``.port`` raises only on access, so scheme, host and port are\n    each judged explicitly — and so is every character of the configured\n    string, because urllib encodes the whole URL and not only its authority.\n\n    Total rather than raising: every caller passes configuration it did not\n    author, and the one caller that mutates before probing would take a raise\n    after the gateway had already moved.\n    '
+    'None when ``url`` can be probed as an HTTP(S) echo, else the defect.\n\n    Pure string judgement — no socket, no DNS, no file read — so this module\n    keeps its IO-free contract while owning the shape rule beside\n    ``echo_url()``, the one reader. Three consumers hold this variable\n    (``the rotation script``, ``the probe module`` and the\n    orchestrator\'s launch verification) and they must not drift into three\n    definitions of "usable", which is what let the script fail open while\n    the engine failed closed.\n\n    Callers that MUTATE before probing must ask here first:\n    ``the rotation script`` rebinds a gateway eight lines before it parses\n    the endpoint, so a late catch is not a refusal — it is a half-finished\n    rotation plus a retry loop burning real gateway switches on a config\n    error that fails identically every time.\n\n    ``urlsplit`` alone is not the test: it never raises on a missing scheme\n    and its ``.port`` raises only on access, so scheme, host and port are\n    each judged explicitly — and so is every character of the configured\n    string, because urllib encodes the whole URL and not only its authority.\n\n    Total rather than raising: every caller passes configuration it did not\n    author, and the one caller that mutates before probing would take a raise\n    after the gateway had already moved.\n    '
     if not isinstance(url, str):
         return "is not a URL string"
     raw = url.strip()
@@ -274,7 +274,7 @@ def echo_url_defect(url: str) -> str | None:
 
 
 def plausible_ip(value) -> str | None:
-    'The trimmed literal when it parses as an IPv4/IPv6 address, else None.\n\n    The echo\'s body is remote-controlled input, so "looks like an IP" is the\n    minimum bar before the string is trusted enough to be stamped on every\n    tool_run row, printed in a launch record and reported by doctor. The bar\n    lives here rather than in the probe module because it is a pure string\n    judgement with three consumers that must not drift: the probe before it\n    stamps a measurement, ``doctor`` re-judging the durable record it read\n    back, and ``scripts/egress-rotate.py`` deciding whether the body it just\n    got may be attested as a verified exit.'
+    'The trimmed literal when it parses as an IPv4/IPv6 address, else None.\n\n    The echo\'s body is remote-controlled input, so "looks like an IP" is the\n    minimum bar before the string is trusted enough to be stamped on every\n    tool_run row, printed in a launch record and reported by doctor. The bar\n    lives here rather than in the probe module because it is a pure string\n    judgement with three consumers that must not drift: the probe before it\n    stamps a measurement, ``doctor`` re-judging the durable record it read\n    back, and ``the rotation script`` deciding whether the body it just\n    got may be attested as a verified exit.'
     if not isinstance(value, str):
         return None
     candidate = value.strip()

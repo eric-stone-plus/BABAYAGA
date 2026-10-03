@@ -66,7 +66,9 @@ while the instrument resolves on the session PATH.
   that anything runs.
 - **The runner is operator-side only.** `babayaga run` executes from the
   operator's shell, never through any host seat.
-- Lab-only v0: the engine engages loopback fixtures only (`LAB_ONLY`).
+- Target gate: the engine engages only what the ROE covers
+  (`roe.check_target` refuses the rest); the v0 loopback-only flag
+  (`LAB_ONLY`) is off since 2026-10-03.
 
 ## Configuration
 
@@ -153,15 +155,16 @@ the real entry with a faithful miniature of the SDK's tool-plugin module
 `contracts.tools` / `trustedToolPolicies` / `toolMetadata` against the
 registered surface.
 
-`integration.test.ts` is the optional real-CLI tier (the Wave-4 gap note in
-the internal design notes): skipped unless `BABAYAGA_IT=1` AND a real CLI resolves
-(`BABAYAGA_BIN` env, else `babayaga` on PATH — the the internal doctrine resolution); opting in
+`the private QA suite` is the optional real-CLI tier (the integration-tier
+gap note in the internal design notes): skipped unless `BABAYAGA_IT=1` AND a real
+CLI resolves (`BABAYAGA_BIN` env, else `babayaga` on PATH — the internal doctrine's
+resolution); opting in
 without a resolvable CLI fails loudly. Opted in, its six tests drive the real
 engine through the framed adapter end to end — doctor / status / roe-check ok
 payloads, a roe-check refusal as `denied` data (never thrown), and `run` /
 `amend` refused at the protocol layer (`operation_refused`) — against a tmp
 `BABAYAGA_HOME` and the shipped loopback ROE example
-(`engine/babayaga/defaults/roe.example.json`; LAB_ONLY holds, no credential
+(`engine/babayaga/defaults/roe.example.json`; LAB_ONLY then held (pre-flip), no credential
 material). Run it with `BABAYAGA_IT=1 make plugin-check-openclaw`. Last
 opt-in run: **pass** (48 pass / 0 fail suite-wide, real `babayaga` 0.0.1,
 2026-10-01).
@@ -173,7 +176,7 @@ tool-plugin authoring metadata, generated manifest fields are not stale, and
 `contracts.tools` matches the declared tool names. Last run: **pass**
 (`Plugin babayaga is valid.`, host 2026.9.7 (3dd806e), 2026-10-01).
 
-Host-hook conformance is exercised by `tests/verify-hook-contract.mjs`. It
+Host-hook conformance is exercised by `the adapter hook-conformance suite (private QA tier)`. It
 copies this adapter (or a supplied comparison adapter) into a private temporary
 workspace, loads the real SDK test runtime from an OpenClaw checkout, and runs
 eight semantic cases: exact block reason, terminal ordering, `exec` matcher
@@ -194,9 +197,9 @@ read the operator shell profile):
 
 ```bash
 bash --noprofile --norc -c \
-  'node tests/verify-hook-contract.mjs /path/to/openclaw'
+  'the adapter hook-conformance suite (private QA tier) /path/to/openclaw'
 bash --noprofile --norc -c \
-  'node tests/verify-hook-contract.mjs /path/to/openclaw /path/to/other/engine/host/openclaw /path/to/@openclaw/plugin-inspector'
+  'the adapter hook-conformance suite (private QA tier) /path/to/openclaw /path/to/other/engine/host/openclaw /path/to/@openclaw/plugin-inspector'
 ```
 
 Static inspector `check --plugin-root <adapter> --openclaw <checkout>` also
@@ -247,17 +250,20 @@ Live-Gateway acceptance: **exercised 2026-10-01** against host 2026.9.7
   green after the fix (`make plugin-check-openclaw` 48 pass/0 fail with
   `BABAYAGA_IT=1`; `make test` 286 pass).
 
-Follow-up live acceptance on **2026-10-02**, host checkout `98aa688c634`:
+Follow-up live acceptance on **2026-10-02**, host checkout `98aa688c634`
+(pre-flip: the engine still self-reported `lab_only: true`; the flag
+flipped on 2026-10-03):
 
-- A real `xiaomi-token-plan/mimo-v2.6-pro` turn in session
-  `agent:main:real-gap` selected `babayaga_doctor` with empty arguments. Its
+- A real production-plan model turn in a persisted seat session
+  selected `babayaga_doctor` with empty arguments. Its
   persisted transcript pairs the model tool call with an `isError: false`
   result (`details.status: "ok"`, `lab_only: true`, all six checks passing)
   and a subsequent normal model completion. Gateway state/config were
   isolated; this read-only doctor call used the existing engine home.
-- With both engines installed, `tools.effective` reported
-  `checked: "live-session"` for both real-model sessions. The default surface
-  contained this engine's doctor/status and the other engine's status/seal_verify. Explicit
+- With a co-installed second seat plugin, `tools.effective` reported
+  `checked: "live-session"` for both real-model sessions. The default
+  surface contained this engine's five tools and the co-installed plugin's
+  own two. Explicit
   `tools.alsoAllow` added all six optional tools, yielding all ten. This checks
   the model-facing optional split without invoking any operation tool.
 

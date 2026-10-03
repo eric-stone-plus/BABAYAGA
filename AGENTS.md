@@ -29,8 +29,10 @@ ledger, nothing spends.
 
 - Do not weaken a gate to make a demo pass. A refusal is the product
   working; routing around one is a defect, not a workaround.
-- v0 engages loopback fixtures only (`engine/babayaga/__init__.py::LAB_ONLY`,
-  enforced by `roe.check_target`). Do not flip it in this tree.
+- The engine engages only targets the ROE covers (`roe.check_target`
+  refuses the rest). The v0 loopback-only flag
+  (`engine/babayaga/__init__.py::LAB_ONLY`) is off — engagement mode is
+  the doctrine and the ROE is the gate; never bypass it.
 - The attempt runner (`babayaga run`) is never a plugin tool. The opencode
   adapter exposes the ops-safe surface (doctor / status / roe-check) only.
 - The adapter's deny hook is a tripwire, not a boundary — its documented

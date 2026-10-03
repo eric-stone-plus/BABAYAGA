@@ -1,7 +1,7 @@
 {
   "name": "openclaw-plugin-babayaga",
   "version": "0.1.0",
-  "description": "BABAYAGA control plane: authorized-only credential-attack engine (lab-only v0), ops-safe read surface over the babayaga/1 adapter.",
+  "description": "BABAYAGA control plane: authorized-only credential-attack engine (ROE-gated engagement mode), ops-safe read surface over the babayaga/1 adapter.",
   "type": "module",
   "private": true,
   "files": [

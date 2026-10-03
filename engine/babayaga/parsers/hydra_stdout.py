@@ -1,4 +1,4 @@
-'hydra v9.8dev stdout/stderr stream parser (http-get profile).\n\n- On this build banners/[DATA]/[ATTEMPT]/found/[STATUS]/summary all go to\n  stdout; [ERROR] lines go to stderr (stock builds split differently —\n  a recorded pitfall — so the grammar below is stream-agnostic on purpose).\n- Found line (http-get carries the path as misc):\n      [18080][http-get] host: 127.0.0.1   misc: /   login: <u>   password: <p>\n- Run summary ("successfully " only when found > 0; singular/plural varies):\n      1 of 1 target successfully completed, 1 valid password found\n      1 of 1 target completed, 0 valid password found'
+'hydra v9.8dev stdout/stderr stream parser (http-get profile).'
 
 from __future__ import annotations
 
@@ -77,6 +77,8 @@ _DATA_ATTACKING_RE = re.compile(r"^\[DATA\] attacking \S+")
 def _redact(line: str) -> str:
     ''
     out = re.sub(r'"[^"]*"', '"***"', line)
+    out = re.sub(r"(?i)\bpassword:\s*.*$", "password: ***", out)
+    out = re.sub(r"(?i)\blogin:\s*\S*", "login: ***", out)
     return out[:160]
 
 
@@ -226,7 +228,7 @@ class HydraStreamParser:
         if self._summary is None:
             reasons.append("no run summary line: hydra was killed, hung, or "
                            "crashed — never reconcile partial output "
-                           "(a recorded pitfall/#5)")
+                           "(a recorded pitfall)")
         if self._summary is not None and not self._finished_seen:
             reasons.append("no 'finished at' line: hydra did not exit "
                            "gracefully after the summary")

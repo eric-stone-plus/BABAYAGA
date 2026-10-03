@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 
 # Source priors: probability a raw finding from this tool is a true positive.
-# Seeded values; calibrate from engagement history (see rules/learned_noise).
+# Seeded values; calibrate from engagement history.
 SOURCE_PRIOR: dict[str, float] = {
     "nuclei": 0.45,        # has matchers but still reports "suspected"
     "dalfox": 0.60,        # ships a PoC it already triggered

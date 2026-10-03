@@ -3,9 +3,13 @@
 A sealed campaign is the babayaga product unit: campaign.db plus
 campaign.seal.json written next to it. The
 manifest binds the ledger's logical state (event-log digest, materialized
-attempts digest, event count, schema version) to the roe_digest recorded by
-campaign.init — the authorization the campaign ran under — and carries an
-overall manifest_sha256 so the manifest file itself is tamper-evident.
+attempts digest, event count, schema version) to the currently governing
+roe_digest (per-attempt stamps bind the digest each attempt actually ran
+under; an amend re-governs and is re-sealed) — and carries an overall
+manifest_sha256 so drift in the manifest file is detectable. The digest is
+unkeyed: "tamper-evident" here means drift-evidence, not resistance to an
+adversary who can re-seal; the out-of-band anchor is the exported
+manifest digest and the run payload.
 
 Design choices of this seal:
 

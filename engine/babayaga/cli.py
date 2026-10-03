@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import signal
 import json
 import os
 import shutil
@@ -157,7 +158,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
                   f"bypasses the lane. the internal design notes: proxy first")
         if not esum["mode_declared"]:
             detail = (f"{egress_mod.MODE_ENV} is undeclared and reads as "
-                      f"direct — the 2026-09-23 incident shape; launch_gate "
+                      f"direct — the recorded incident shape; launch_gate "
                       f"refuses unless {egress_mod.ACCEPT_DIRECT_ENV}=1")
         checks.append({
             "check": "egress_direct_declared" if esum["mode_declared"]
@@ -339,6 +340,9 @@ def cmd_export_access(args: argparse.Namespace) -> int:
 # ------------------------------------------------------------------ run
 
 def cmd_run(args: argparse.Namespace) -> int:
+    # SIGTERM must unwind through the run's `finally` scrub: the default
+    # disposition kills the process with capture files still on disk.
+    signal.signal(signal.SIGTERM, lambda _s, _f: (_ for _ in ()).throw(SystemExit(143)))
     from . import config as config_mod
     from . import manifests as manifests_mod
     from . import run as run_mod

@@ -183,8 +183,9 @@ novelty is the **intersection**, never a single mechanism:
    roelint's advisory lint), and credential-domain-specific (vs all generic
    ROE projects at 0–2★).
 3. **Sealed evidence specified beyond cybersec-toolkit's honest limits**:
-   cross-process chains with truncation detection (anchored checkpoints),
-   not per-process chains with undetected tails.
+   cross-process fold-vs-materialized reconciliation with per-attempt ROE
+   stamps and a drift-detecting manifest digest (a re-seal chain field and
+   truncation detection remain open — the honest current limit).
 
 Explicitly NOT claimed: first security MCP/plugin (hexstrike et al.); first
 authorization-gated toolkit (cybersec-toolkit); first gated NetExec wrapper

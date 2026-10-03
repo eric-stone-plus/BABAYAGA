@@ -1,4 +1,4 @@
-'    ROE load/validate -> window gate -> target gate (LAB_ONLY loopback) ->\n    rule selection (spray pack, B10 throttle) -> budget slice plan (explicit\n    pairs) -> ledger init/reserve/dispatch (evidence-first) -> executor\n    spawn (O_TMPFILE pair transport, fresh cwd, wall-clock kill) -> stream\n    parse -> reconcile -> seal + verify -> scrub captures.\n\nv0 engages exactly ONE slice = ONE hydra invocation carrying every planned\npair (password-outer across the lab candidate list), so the rules\'\nslice_cadence_seconds (spacing BETWEEN invocations) is never violated; a\ncadenced multi-invocation scheduler is post-v0.\n\nLab-fixture lifecycle\n---------------------\nThe fixture (engine/lab/http_get_lab.py) runs as a SUBPROCESS, never\nin-process: a fresh process per run means fresh lockout counters, which is\nwhat makes the invalid-reconcile claim below sound for the lab. The runner\nspawns `sys.executable lab/http_get_lab.py <port>` (port 0 = ephemeral when\nno --roe pins one), reads the fixture\'s stdout readiness line\n("127.0.0.1 <port>") — printed only after the listen socket is live — with\na bounded select, and terminate()/kill()s the child in a finally. Fixture\nstderr lands in run_dir/lab.stderr (request lines only, no credentials) and\nis scrubbed with the instrument captures.\n\nROE source: `--roe FILE` (must declare exactly one target with exactly one\nport; the fixture binds that port) or the default — the shipped example ROE\nadapted to the fixture\'s ephemeral port. NOTE: the adapted digest changes\nwith the port, so default-mode re-runs against an existing campaign dir hit\nthe re-init guard below by design; `--roe` with a fixed port gives a stable\ndigest and a RESUMED campaign (prior spend counts toward the budget).\n\nReconciliation policy (the conservative core)\n---------------------------------------------\nOnly stream-proven outcomes are reconciled; everything else expires:\n\nIn particular, a run with a find reconciles the found pair "valid" and\nexpires the rest: hydra -f stops the target after the first find, so the\nwire state of the remaining planned pairs is genuinely unknown — claiming\n"invalid" would be a guess, and guessing is worse than spending budget.\n\nExit contract (via cli): 0 completed pipeline (whatever the credential\noutcome), 2 refusal — gates, planning, or a refused reconciliation — with\nthe campaign still sealed, 1 unexpected failure (fixture bind, spawn,\npost-seal verify mismatch).\n'
+'    ROE load/validate -> window gate -> target gate (LAB_ONLY loopback) ->\n    rule selection (spray pack, B10 throttle) -> budget slice plan (explicit\n    pairs) -> ledger init/reserve/dispatch (evidence-first) -> executor\n    spawn (O_TMPFILE pair transport, fresh cwd, wall-clock kill) -> stream\n    parse -> reconcile -> seal + verify -> scrub captures.\n\nv0 engages exactly ONE slice = ONE hydra invocation carrying every planned\npair (password-outer across the lab candidate list), so the rules\'\nslice_cadence_seconds (spacing BETWEEN invocations) is never violated; a\ncadenced multi-invocation scheduler is post-v0.\n\nLab-fixture lifecycle\n---------------------\nThe fixture (engine/lab/http_get_lab.py) runs as a SUBPROCESS, never\nin-process: a fresh process per run means fresh lockout counters, which is\nwhat makes the invalid-reconcile claim below sound for the lab. The runner\nspawns `sys.executable lab/http_get_lab.py <port>` (port 0 = ephemeral when\nno --roe pins one), reads the fixture\'s stdout readiness line\n("127.0.0.1 <port>") — printed only after the listen socket is live — with\na bounded select, and terminate()/kill()s the child in a finally. Fixture\nstderr lands in run_dir/lab.stderr (request lines only, no credentials) and\nis scrubbed with the instrument captures.\n\nROE source: `--roe FILE` (must declare exactly one target with exactly one\nport; the fixture binds that port) or the default — the shipped example ROE\nadapted to the fixture\'s ephemeral port. NOTE: the adapted digest changes\nwith the port, so default-mode re-runs against an existing campaign dir hit\nthe re-init guard below by design; `--roe` with a fixed port gives a stable\ndigest and a RESUMED campaign (prior spend counts toward the budget).\n\nReconciliation policy (the conservative core)\n---------------------------------------------\nOnly stream-proven outcomes are reconciled; everything else expires:\n\nIn particular, a run with a find reconciles the found pair "valid" and\nexpires the rest: hydra -f stops the target after the first find, so the\nwire state of the remaining planned pairs is genuinely unknown — claiming\n"invalid" would be a guess, and guessing is worse than spending budget.\n\nExit contract (via cli): 0 completed pipeline (whatever the credential\noutcome), 2 refusal — gates, planning, or a refused reconciliation — with\nthe campaign still sealed, 1 unexpected failure (fixture bind, fixture spawn,\npost-seal verify mismatch).\n'
 
 from __future__ import annotations
 
@@ -191,7 +191,7 @@ def _plan(principals: list[str], passwords: list[str], spent: dict[str, int],
 
 # ------------------------------------------------------------------ scrub
 
-def _scrub_file(path: Path) -> None:
+def _scrub_file(path: Path) -> bool:
     """Zero-overwrite + unlink (executor._pair_list_path fallback shred)."""
     try:
         size = path.stat().st_size
@@ -204,21 +204,29 @@ def _scrub_file(path: Path) -> None:
         finally:
             os.close(fd)
         path.unlink()
+        return True
     except OSError:
-        pass
+        return False
 
 
-def _scrub_run_dir(run_dir: Path) -> None:
-    ''
+def _scrub_run_dir(run_dir: Path) -> str:
+    '    Returns the real outcome for the run payload — the payload must never\n    assert a scrub that did not happen.'
     if not run_dir.is_dir():
-        return
+        return "no capture dir"
+    total = failed = 0
     for entry in run_dir.iterdir():
         if entry.is_file():
-            _scrub_file(entry)
+            total += 1
+            if not _scrub_file(entry):
+                failed += 1
     try:
         run_dir.rmdir()
     except OSError:
         pass
+    if failed:
+        return (f"INCOMPLETE: {failed}/{total} capture file(s) resisted "
+                "zero-overwrite")
+    return f"scrubbed (zero-overwrite + unlink, {total} file(s), the internal design notes)"
 
 
 # -------------------------------------------------------------------- run
@@ -468,6 +476,7 @@ def _execute_and_reconcile(*, led, argv, pairs, planned, run_dir, campaign_dir, 
         + ")")
     led.reconcile_slice(slice_id, reconcile_summary)
 
+    capture_state = _scrub_run_dir(run_dir)
     manifest = seal_mod.seal_campaign(campaign_dir)
     verify_ok, verify_detail = seal_mod.verify_seal(campaign_dir)
 
@@ -498,7 +507,7 @@ def _execute_and_reconcile(*, led, argv, pairs, planned, run_dir, campaign_dir, 
                                     if v == budget.VOIDED)},
         "refusal_reasons": refusal_reasons,
         "streams_sha256": stream_digests,
-        "captures": "scrubbed (zero-overwrite + unlink, the internal design notes)",
+        "captures": capture_state,
         "seal": {"manifest_sha256": manifest["manifest_sha256"],
                  "path": str(seal_mod.manifest_path(campaign_dir))},
         "verify": {"ok": verify_ok, "detail": verify_detail},

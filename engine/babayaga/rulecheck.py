@@ -11,10 +11,6 @@ from pathlib import Path
 
 from . import EXIT_ERROR, EXIT_OK, EXIT_REFUSAL, budget
 
-# --------------------------------------------------------------------------
-# Closed vocabularies (v1). Widening one is a deliberate corpus change: add
-# the value here, ship a rule that uses it, extend tests/test_rulecheck.py.
-# --------------------------------------------------------------------------
 
 # Rule intent families. spray = password-outer across principals (the shape
 # budget.plan_slice emits); stuff = replay of already-known pairs, one shot

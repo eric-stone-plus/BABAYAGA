@@ -140,7 +140,8 @@ writing the module. That work happens outside the engine, sees no
 credentials, and lands as a module like any other (§1 preamble:
 external binary, its own repo and license). Until such an engagement
 exists, Ghidra is not installed, not cited as a dependency, and
-appears in no manifest.
+appeared in no manifest at survey time (§1.6 later re-judges the
+adoption and the tree state).
 
 ### 1.6 Mission re-evaluation — the phase-2 identity (2026-10-03)
 
@@ -314,7 +315,7 @@ and change only with an operator sign-off note.
 | `ledger.py` + `schema.py` | Native, own schema | Event+row-in-one-transaction, flock single-writer, CAS state changes; attempt ledgers are high-write-rate state, so the schema is event-sourced attempts rather than entity snapshots. The export speaks the reserved `access` kind + `grants_access`/`escalates_to` edge vocabulary |
 | `confidence.py` | Native, review-critical | The priors `kerbrute: 0.85`, `hydra: 0.90` and the `credential_usable` hard-evidence signal were seeded for exactly this engine |
 | `state_machine.py`, `rulecheck.py` | Native | Pure transition tables + forbidden-actor + derived drift-audited registries; the attempt lifecycle is flat (`queued→running→result{valid\|invalid\|locked\|error}`); the checker makes throttle flags *required* on every rule (the B10 inversion) |
-| `seal.py` | Native | Seal = db content digests + integrity triple + census + provenance, one JSON file; re-seal chains; gated on fold == materialized rows |
+| `seal.py` | Native | Seal = db content digests + integrity triple + census + provenance, one JSON file; re-seal re-attests (no chain field yet — the exported manifest digest anchors out-of-band); gated on fold == materialized rows |
 | Dispatch gate ordering | Native | The ACT ordering canary → cooldown → scope → recheck → render → dedup is load-bearing: every cheaper gate runs before every dearer one, and scope is re-checked after cooldowns |
 | Sealed reconnaissance exports | **Consume** | A sealed-export manifest is the handoff contract: BABAYAGA ingests sealed credential/asset findings as campaign inputs, spending what observe-only doctrine reports but never uses |
 

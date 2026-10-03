@@ -15,7 +15,7 @@ DEFAULT_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
 # (substring, vendor) — matched case-insensitively against title, webserver,
 # tech strings and header names/values. First match wins.
 _WAF_SIGNATURES: tuple[tuple[str, str], ...] = (
-    ("阿里云", "aliyun-waf"),           # observed production block title
+    ("阿里云", "aliyun-waf"),           # production block-page title
     ("aliyun waf", "aliyun-waf"),
     ("yundun", "aliyun-waf"),
     ("雷池", "safeline"),

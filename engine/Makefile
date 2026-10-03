@@ -6,7 +6,7 @@
 
 test:
 	@if [ ! -d tests ]; then \
-		echo "SKIP: tests/ is not part of this export (see engine/PUBLISHED_FROM)"; \
+		echo "SKIP: the private QA suite is not part of this export (see engine/PUBLISHED_FROM)"; \
 		exit 0; \
 	fi
 	python3 -m unittest discover -s tests -v

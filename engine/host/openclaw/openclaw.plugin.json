@@ -1,7 +1,7 @@
 {
   "id": "babayaga",
   "name": "BABAYAGA",
-  "description": "Authorized-only credential-attack engine (lab-only v0): ops-safe read surface over the babayaga/1 adapter. The attempt runner is operator-side only and is never exposed as a tool.",
+  "description": "Authorized-only credential-attack engine (ROE-gated engagement mode): ops-safe read surface over the babayaga/1 adapter. The attempt runner is operator-side only and is never exposed as a tool.",
   "version": "0.1.0",
   "configSchema": {
     "type": "object",

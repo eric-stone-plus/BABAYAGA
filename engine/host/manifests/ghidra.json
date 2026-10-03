@@ -19,5 +19,5 @@
     "anchored_date": "2026-10-03"
   },
   "requires_standard_ports": false,
-  "notes": "RE instrument (RESEARCH.md \u00a71.6): analyzeHeadless drives through the executor seam. Version served by the tools/ghidra wrapper from the install's Ghidra/application.properties (analyzeHeadless cannot self-report). Install (release tree, shared machine install) outside this engine's residency \u2014 migration into babayaga's own residency is an open item. Mirror tools/mirrors/ghidra.git (CI-stripped, 2446 refs)."
+  "notes": "RE instrument (RESEARCH.md \u00a71.6): analyzeHeadless drives through the executor seam. Version served by the tools/ghidra wrapper from the install's Ghidra/application.properties (analyzeHeadless cannot self-report). Install (release tree) outside this engine's residency \u2014 migration into babayaga's own residency is an open item. Mirror tools/mirrors/ghidra.git (CI-stripped, 2446 refs)."
 }

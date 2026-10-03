@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "babayaga-engine"
 version = "0.0.1"
-description = "Authorized-only credential-attack engine (lab-only v0)"
+description = "Authorized-only credential-attack engine (ROE-gated engagement mode)"
 requires-python = ">=3.11"
 # PHASE CONSTRAINT (RESEARCH.md): stdlib-only on purpose — protocol
 # libraries are license traps (impacket Apache-1.1-modified, paramiko LGPL,

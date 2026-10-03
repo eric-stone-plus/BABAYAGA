@@ -1,8 +1,9 @@
 # BABAYAGA
 
 Authorized-only credential-attack engine, driven as an opencode plugin.
-Lab-only v0: the engine engages loopback fixtures only, enforced in code
-(`engine/babayaga/__init__.py::LAB_ONLY`, checked by `roe.check_target`).
+Engagement mode: the engine engages only what the ROE covers, enforced
+in code (`roe.check_target` refuses the rest; the v0 loopback-only flag
+`engine/babayaga/__init__.py::LAB_ONLY` is off since 2026-10-03).
 An independent research project — the thesis stands alone in GATE.md.
 
 ## Quickstart
@@ -26,8 +27,9 @@ SKIP here (see `engine/PUBLISHED_FROM`).
 The opencode adapter (`engine/host/opencode/babayaga.ts`) is a thin
 control plane over the CLI: register it with opencode as a plugin (copy or
 link it into opencode's plugin directory). It exposes doctor / status /
-roe-check plus a tripwire deny on raw instrument invocation; the attempt
-runner is never a plugin tool.
+roe-check plus a tripwire deny on raw hydra-class credential-attack
+invocation (the C-instrument class; other instruments are out of the
+tripwire's scope by design); the attempt runner is never a plugin tool.
 
 ## Repo map
 
